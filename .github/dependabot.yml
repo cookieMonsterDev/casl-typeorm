@@ -1,59 +1,59 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     # Monthly schedule approximates "only update packages at least 1 month old".
     # Dependabot does not support a native min-version-age filter.
     schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
+      interval: 'monthly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
+      - 'dependencies'
     commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
+      prefix: 'chore'
+      prefix-development: 'chore'
+      include: 'scope'
     groups:
       typescript-tooling:
         patterns:
-          - "typescript*"
-          - "typescript-eslint"
-          - "@types/*"
-          - "ts-jest"
+          - 'typescript*'
+          - 'typescript-eslint'
+          - '@types/*'
+          - 'ts-jest'
       eslint:
         patterns:
-          - "eslint*"
-          - "@eslint/*"
+          - 'eslint*'
+          - '@eslint/*'
       testing:
         patterns:
-          - "jest*"
-          - "@jest/*"
-          - "@types/jest"
+          - 'jest*'
+          - '@jest/*'
+          - '@types/jest'
       formatting:
         patterns:
-          - "prettier*"
-          - "lint-staged"
+          - 'prettier*'
+          - 'lint-staged'
       commitlint:
         patterns:
-          - "@commitlint/*"
+          - '@commitlint/*'
       semantic-release:
         patterns:
-          - "semantic-release*"
-          - "@semantic-release/*"
+          - 'semantic-release*'
+          - '@semantic-release/*'
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
+      interval: 'monthly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
     labels:
-      - "dependencies"
-      - "github-actions"
+      - 'dependencies'
+      - 'github-actions'
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
