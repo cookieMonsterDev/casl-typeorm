@@ -1,6 +1,6 @@
 {
   "name": "@cookiemonsterdev/casl-typeorm",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "description": "TypeORM integration for CASL — filter queries and check permissions using ability rules",
   "author": "Mykhailo Toporkov",
