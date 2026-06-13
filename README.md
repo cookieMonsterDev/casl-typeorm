@@ -1,16 +1,16 @@
-# @casl/typeorm
+# @cookiemonsterdev/casl-typeorm
 
 TypeORM integration for [CASL](https://casl.js.org) — query only the records a user is allowed to access.
 
 ## Installation
 
 ```sh
-pnpm add @casl/typeorm @casl/ability typeorm
+pnpm add @cookiemonsterdev/casl-typeorm @casl/ability typeorm
 ```
 
 ## Overview
 
-`@casl/typeorm` provides two main building blocks:
+`@cookiemonsterdev/casl-typeorm` provides two main building blocks:
 
 - **`createTypeOrmAbility`** — creates a CASL `Ability` that accepts native TypeORM `FindOptionsWhere` conditions, enabling both database-level filtering and instance-level permission checks.
 - **`accessibleBy`** — converts ability rules into a `FindOptionsWhere` array you can pass directly to TypeORM's `find`, `findOne`, or `findAndCount`.
@@ -23,7 +23,7 @@ Use TypeORM operators directly as conditions — the same operators you already 
 
 ```ts
 import { In, MoreThan, Not } from 'typeorm';
-import { createTypeOrmAbility } from '@casl/typeorm';
+import { createTypeOrmAbility } from '@cookiemonsterdev/casl-typeorm';
 
 // Rules are evaluated last-to-first: the last rule has the highest priority.
 const ability = createTypeOrmAbility([
@@ -42,7 +42,7 @@ const ability = createTypeOrmAbility([
 ### 2. Filter database queries
 
 ```ts
-import { accessibleBy } from '@casl/typeorm';
+import { accessibleBy } from '@cookiemonsterdev/casl-typeorm';
 
 const where = accessibleBy(ability, 'read').ofType('Article');
 
@@ -74,7 +74,7 @@ if (ability.can('read', subject('Article', article))) {
 
 ```ts
 import { AbilityBuilder } from '@casl/ability';
-import { createTypeOrmAbility, TypeOrmAbility } from '@casl/typeorm';
+import { createTypeOrmAbility, TypeOrmAbility } from '@cookiemonsterdev/casl-typeorm';
 import { Not } from 'typeorm';
 
 type Actions = 'create' | 'read' | 'update' | 'delete';
@@ -141,7 +141,7 @@ The runtime conditions matcher used internally by `createTypeOrmAbility`. You ca
 
 ```ts
 import { Ability, fieldPatternMatcher } from '@casl/ability';
-import { typeormQueryMatcher } from '@casl/typeorm';
+import { typeormQueryMatcher } from '@cookiemonsterdev/casl-typeorm';
 
 const ability = new Ability(rules, {
   conditionsMatcher: typeormQueryMatcher,
