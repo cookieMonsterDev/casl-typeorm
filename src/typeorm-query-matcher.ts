@@ -1,4 +1,4 @@
-import type { FindOptionsWhere } from 'typeorm';
+import { type FindOptionsWhere } from 'typeorm';
 
 function isFindOperator(value: unknown): boolean {
   return (
@@ -13,11 +13,13 @@ function sqlLikeToRegex(pattern: string, caseInsensitive: boolean): RegExp {
   for (const char of pattern) {
     if (char === '%') {
       regexStr += '.*';
-    } else if (char === '_') {
-      regexStr += '.';
-    } else {
-      regexStr += char.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+      continue;
     }
+    if (char === '_') {
+      regexStr += '.';
+      continue;
+    }
+    regexStr += char.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
   }
   return new RegExp(`^${regexStr}$`, caseInsensitive ? 'i' : '');
 }
@@ -120,8 +122,9 @@ function evaluateConditions(
       if (!evaluateFindOperator(fieldValue, condition as Record<string, unknown>)) {
         return false;
       }
-    } else if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
-      // Nested conditions (for relation fields)
+      continue;
+    }
+    if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
       if (
         !evaluateConditions(
           fieldValue as Record<string, unknown>,
@@ -130,9 +133,9 @@ function evaluateConditions(
       ) {
         return false;
       }
-    } else {
-      if (fieldValue !== condition) return false;
+      continue;
     }
+    if (fieldValue !== condition) return false;
   }
   return true;
 }

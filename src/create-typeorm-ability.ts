@@ -1,13 +1,13 @@
 import {
   Ability,
-  fieldPatternMatcher,
-  type AbilityOptionsOf,
+  type RawRuleFrom,
   type AbilityTuple,
   type MongoAbility,
-  type RawRuleFrom,
+  fieldPatternMatcher,
+  type AbilityOptionsOf,
 } from '@casl/ability';
-import type { FindOptionsWhere } from 'typeorm';
-import { typeormQueryMatcher } from './typeorm-query-matcher';
+import { type FindOptionsWhere } from 'typeorm';
+import { typeormQueryMatcher } from '@/typeorm-query-matcher';
 
 export type TypeOrmAbility<A extends AbilityTuple = AbilityTuple> = MongoAbility<
   A,
