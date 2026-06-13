@@ -6,7 +6,7 @@ updates:
     # Dependabot does not support a native min-version-age filter.
     schedule:
       interval: "monthly"
-      day: "1"
+      day: "monday"
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 10
@@ -48,7 +48,7 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "1"
+      day: "monday"
       time: "09:00"
       timezone: "UTC"
     labels:
