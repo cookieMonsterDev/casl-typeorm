@@ -1,7 +1,7 @@
-import { rulesToCondition } from '@casl/ability/extra';
-import type { AnyAbility, SubjectType } from '@casl/ability';
 import { Not } from 'typeorm';
-import type { FindOptionsWhere } from 'typeorm';
+import { type FindOptionsWhere } from 'typeorm';
+import { rulesToCondition } from '@casl/ability/extra';
+import { type AnyAbility, type SubjectType } from '@casl/ability';
 
 type WhereGroup = FindOptionsWhere<unknown>[];
 

@@ -18,11 +18,4 @@ module.exports = tseslint.config(
       'no-undef': 'off',
     },
   },
-  {
-    // Tests may use require() for dynamic/mocked module loading
-    files: ['src/**/__tests__/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-require-imports': 'off',
-    },
-  },
 );

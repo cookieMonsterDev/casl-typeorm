@@ -1,18 +1,19 @@
 import {
-  And,
-  Between,
-  ILike,
   In,
-  IsNull,
-  Like,
-  LessThan,
-  LessThanOrEqual,
-  MoreThan,
-  MoreThanOrEqual,
-  Not,
   Or,
+  Not,
+  And,
+  Raw,
+  Like,
+  ILike,
+  IsNull,
+  Between,
+  LessThan,
+  MoreThan,
+  LessThanOrEqual,
+  MoreThanOrEqual,
 } from 'typeorm';
-import { typeormQueryMatcher } from '../typeorm-query-matcher';
+import { typeormQueryMatcher } from '@/typeorm-query-matcher';
 
 function matches(conditions: object, entity: object): boolean {
   return typeormQueryMatcher(conditions as never)(entity);
@@ -152,7 +153,6 @@ describe('typeormQueryMatcher', () => {
 
   describe('error cases', () => {
     it('throws for Raw operator', () => {
-      const { Raw } = require('typeorm');
       expect(() => matches({ id: Raw(() => '1 = 0') }, { id: 1 })).toThrow(
         'Raw operator is not supported for runtime ability checks',
       );

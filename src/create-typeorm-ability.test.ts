@@ -1,5 +1,6 @@
+import { subject } from '@casl/ability';
 import { In, MoreThan, Not } from 'typeorm';
-import { createTypeOrmAbility } from '../create-typeorm-ability';
+import { createTypeOrmAbility } from '@/create-typeorm-ability';
 
 describe('createTypeOrmAbility', () => {
   it('creates an ability instance', () => {
@@ -24,8 +25,6 @@ describe('createTypeOrmAbility', () => {
       ]);
       const post = { published: true, authorId: 1 };
 
-      // Using setSubjectType to tag the subject
-      const { subject } = require('@casl/ability');
       const taggedPost = subject('Post', post);
       expect(ability.can('read', taggedPost)).toBe(true);
 
@@ -37,8 +36,6 @@ describe('createTypeOrmAbility', () => {
       const ability = createTypeOrmAbility([
         { action: 'read', subject: 'Post', conditions: { views: MoreThan(100) } },
       ]);
-      const { subject } = require('@casl/ability');
-
       expect(ability.can('read', subject('Post', { views: 200 }))).toBe(true);
       expect(ability.can('read', subject('Post', { views: 50 }))).toBe(false);
     });
@@ -47,8 +44,6 @@ describe('createTypeOrmAbility', () => {
       const ability = createTypeOrmAbility([
         { action: 'read', subject: 'Post', conditions: { status: In(['active', 'published']) } },
       ]);
-      const { subject } = require('@casl/ability');
-
       expect(ability.can('read', subject('Post', { status: 'active' }))).toBe(true);
       expect(ability.can('read', subject('Post', { status: 'published' }))).toBe(true);
       expect(ability.can('read', subject('Post', { status: 'deleted' }))).toBe(false);
@@ -58,16 +53,12 @@ describe('createTypeOrmAbility', () => {
       const ability = createTypeOrmAbility([
         { action: 'read', subject: 'Post', conditions: { secret: Not(true) } },
       ]);
-      const { subject } = require('@casl/ability');
-
       expect(ability.can('read', subject('Post', { secret: false }))).toBe(true);
       expect(ability.can('read', subject('Post', { secret: true }))).toBe(false);
     });
 
     it('allows unconditional access', () => {
       const ability = createTypeOrmAbility([{ action: 'manage', subject: 'all' }]);
-      const { subject } = require('@casl/ability');
-
       expect(ability.can('read', subject('Post', {}))).toBe(true);
       expect(ability.can('update', subject('Post', {}))).toBe(true);
       expect(ability.can('delete', subject('Comment', {}))).toBe(true);
@@ -78,8 +69,6 @@ describe('createTypeOrmAbility', () => {
         { action: 'read', subject: 'Post' },
         { action: 'read', subject: 'Post', conditions: { secret: true }, inverted: true },
       ]);
-      const { subject } = require('@casl/ability');
-
       expect(ability.can('read', subject('Post', { secret: false }))).toBe(true);
       expect(ability.can('read', subject('Post', { secret: true }))).toBe(false);
     });

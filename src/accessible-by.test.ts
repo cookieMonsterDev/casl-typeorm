@@ -1,6 +1,6 @@
 import { In, MoreThan, Not } from 'typeorm';
-import { createTypeOrmAbility } from '../create-typeorm-ability';
-import { accessibleBy } from '../accessible-by';
+import { accessibleBy } from '@/accessible-by';
+import { createTypeOrmAbility } from '@/create-typeorm-ability';
 
 describe('accessibleBy', () => {
   describe('basic can rules', () => {
