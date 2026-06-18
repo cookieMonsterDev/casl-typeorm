@@ -5,7 +5,6 @@ const config = {
   testMatch: ['**/src/**/*.test.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.test.ts', '!src/index.ts'],
@@ -19,9 +18,6 @@ const config = {
           moduleResolution: 'NodeNext',
           module: 'NodeNext',
           isolatedModules: true,
-          paths: {
-            '@/*': ['./src/*'],
-          },
         },
       },
     ],

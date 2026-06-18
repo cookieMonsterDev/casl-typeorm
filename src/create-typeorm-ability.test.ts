@@ -1,6 +1,6 @@
 import { subject } from '@casl/ability';
 import { In, MoreThan, Not } from 'typeorm';
-import { createTypeOrmAbility } from '@/create-typeorm-ability';
+import { createTypeOrmAbility } from './create-typeorm-ability';
 
 describe('createTypeOrmAbility', () => {
   it('creates an ability instance', () => {

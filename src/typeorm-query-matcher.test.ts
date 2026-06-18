@@ -13,7 +13,7 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
 } from 'typeorm';
-import { typeormQueryMatcher } from '@/typeorm-query-matcher';
+import { typeormQueryMatcher } from './typeorm-query-matcher';
 
 function matches(conditions: object, entity: object): boolean {
   return typeormQueryMatcher(conditions as never)(entity);
