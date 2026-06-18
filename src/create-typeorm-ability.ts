@@ -7,7 +7,7 @@ import {
   type AbilityOptionsOf,
 } from '@casl/ability';
 import { type FindOptionsWhere } from 'typeorm';
-import { typeormQueryMatcher } from '@/typeorm-query-matcher';
+import { typeormQueryMatcher } from './typeorm-query-matcher';
 
 export type TypeOrmAbility<A extends AbilityTuple = AbilityTuple> = MongoAbility<
   A,
