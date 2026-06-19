@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.1...v1.0.2) (2026-06-18)
+
+### Bug Fixes
+
+- update dependencies to latest versions and replace path aliases with relative imports ([4814eaa](https://github.com/cookieMonsterDev/casl-typeorm/commit/4814eaad7b71bfe4246ee5a579067a3f189b274d))
+
 ## [1.0.1](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.0...v1.0.1) (2026-06-13)
 
 ### Bug Fixes
