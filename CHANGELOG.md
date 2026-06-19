@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.2...v1.0.3) (2026-06-19)
+
+### Bug Fixes
+
+- return false when nested field is null or undefined ([6658cd5](https://github.com/cookieMonsterDev/casl-typeorm/commit/6658cd5b63483c0fb19b9a04306fad88e6344ba9))
+
 ## [1.0.2](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.1...v1.0.2) (2026-06-18)
 
 ### Bug Fixes
