@@ -149,6 +149,14 @@ describe('typeormQueryMatcher', () => {
       expect(matches({ author: { id: 1 } }, { author: { id: 1, name: 'Alice' } })).toBe(true);
       expect(matches({ author: { id: 1 } }, { author: { id: 2, name: 'Bob' } })).toBe(false);
     });
+
+    it('returns false when nested field is null', () => {
+      expect(matches({ author: { id: 1 } }, { author: null })).toBe(false);
+    });
+
+    it('returns false when nested field is undefined', () => {
+      expect(matches({ author: { id: 1 } }, {})).toBe(false);
+    });
   });
 
   describe('error cases', () => {
