@@ -125,6 +125,9 @@ function evaluateConditions(
       continue;
     }
     if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
+      if (fieldValue === null || fieldValue === undefined) {
+        return false;
+      }
       if (
         !evaluateConditions(
           fieldValue as Record<string, unknown>,
