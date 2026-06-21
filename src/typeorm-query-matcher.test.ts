@@ -150,12 +150,16 @@ describe('typeormQueryMatcher', () => {
       expect(matches({ author: { id: 1 } }, { author: { id: 2, name: 'Bob' } })).toBe(false);
     });
 
-    it('returns false when nested field is null', () => {
-      expect(matches({ author: { id: 1 } }, { author: null })).toBe(false);
+    it('throws when nested relation field is null (not loaded)', () => {
+      expect(() => matches({ author: { id: 1 } }, { author: null })).toThrow(
+        'Relation "author" is not loaded. Load the relation before checking ability.can().',
+      );
     });
 
-    it('returns false when nested field is undefined', () => {
-      expect(matches({ author: { id: 1 } }, {})).toBe(false);
+    it('throws when nested relation field is undefined (not loaded)', () => {
+      expect(() => matches({ author: { id: 1 } }, {})).toThrow(
+        'Relation "author" is not loaded. Load the relation before checking ability.can().',
+      );
     });
   });
 
