@@ -70,6 +70,20 @@ if (ability.can('read', subject('Article', article))) {
 }
 ```
 
+> **Relations must be loaded.** If a rule condition references a nested relation (e.g. `{ author: { isVerified: true } }`), that relation must be loaded on the entity before calling `ability.can()`. Accessing an unloaded relation throws an error at runtime:
+>
+> ```ts
+> // throws: Relation "author" is not loaded. Load the relation before checking ability.can().
+> ability.can('read', subject('Article', articleWithoutAuthor));
+>
+> // correct — load the relation first
+> const article = await articleRepository.findOne({
+>   where: { id: 1 },
+>   relations: { author: true },
+> });
+> ability.can('read', subject('Article', article));
+> ```
+
 ### Using with `AbilityBuilder`
 
 ```ts
@@ -152,6 +166,8 @@ const ability = new Ability(rules, {
 Supports: plain equality, `Not`, `In`, `MoreThan`, `MoreThanOrEqual`, `LessThan`, `LessThanOrEqual`, `IsNull`, `Between`, `Like`, `ILike`, `And`, `Or`, `ArrayContains`, `ArrayContainedBy`, `ArrayOverlap`.
 
 > **`Raw` is not supported** for instance-level checks — it can only be used in query conditions.
+>
+> **Relations must be loaded** before instance-level checks. If a condition references a nested relation and that relation is `null` or `undefined` on the entity, an error is thrown. See [Instance-level checks](#3-instance-level-checks) for details.
 
 ## Limitations
 
