@@ -125,10 +125,13 @@ function evaluateConditions(
       continue;
     }
     if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
-      if (fieldValue === null || fieldValue === undefined) {
+      if (fieldValue === undefined) {
         throw new Error(
           `Relation "${key}" is not loaded. Load the relation before checking ability.can().`,
         );
+      }
+      if (fieldValue === null) {
+        return false;
       }
       if (
         !evaluateConditions(
