@@ -1,3 +1,9 @@
+## [1.0.4](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.3...v1.0.4) (2026-06-21)
+
+### Bug Fixes
+
+- throw when nested relation is not loaded during ability check ([#12](https://github.com/cookieMonsterDev/casl-typeorm/issues/12)) ([9172ad1](https://github.com/cookieMonsterDev/casl-typeorm/commit/9172ad15b86d1167f1ae0953bbd4f7fb5deb186a))
+
 ## [1.0.3](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.2...v1.0.3) (2026-06-19)
 
 ### Bug Fixes
