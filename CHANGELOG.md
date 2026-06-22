@@ -1,3 +1,9 @@
+## [1.0.5](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.4...v1.0.5) (2026-06-22)
+
+### Bug Fixes
+
+- return false when nested relation is null instead of throwing ([#14](https://github.com/cookieMonsterDev/casl-typeorm/issues/14)) ([bcd366a](https://github.com/cookieMonsterDev/casl-typeorm/commit/bcd366ab34f61edaaffb8a7c9c22adbbfe3e7d1c))
+
 ## [1.0.4](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.3...v1.0.4) (2026-06-21)
 
 ### Bug Fixes
