@@ -7,37 +7,36 @@ on:
     branches:
       - develop
       - master
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
-      
+          cache: "pnpm"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Typecheck
         run: pnpm typecheck
-      
+
       - name: Lint
         run: pnpm lint
-      
+
       - name: Format check
         run: pnpm format:check
-      
+
       - name: Test
         run: pnpm test
-      
+
       - name: Build
         run: pnpm build
