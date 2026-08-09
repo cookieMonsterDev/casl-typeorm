@@ -58,7 +58,7 @@ importers:
         version: 29.4.11(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(jest-util@30.4.1)(jest@30.4.2(@types/node@25.9.3))(typescript@6.0.3)
       typeorm:
         specifier: ^1.0.0
-        version: 1.0.0
+        version: 1.1.0
       typescript:
         specifier: ^6.0.0
         version: 6.0.3
@@ -2767,8 +2767,8 @@ packages:
     resolution: {integrity: sha512-YGYEVz3Fm5iy/AybuA0oyNFq7H4CgQNfRp/qfe8nurE1kuCeNm3/vfm9X4Mtl+qLyaKJUh5xrFZwogr41SMjYA==}
     engines: {node: '>=20'}
 
-  typeorm@1.0.0:
-    resolution: {integrity: sha512-2mSKNqucP8vo+xQLP59xlHUcqLvG6qajxA7q7tnhJgeZjTrA6lK/Ar7LRyiAxdXhyXmGbIPsArPmcUB9Xg+M7w==}
+  typeorm@1.1.0:
+    resolution: {integrity: sha512-iX/kvsV42/htCNAQUyElGW87E4Z12neZc6YUFBTEu0BnLiREYDNT5Wfw3wRqZw9vyOEC36zUBAY6Qvywoig06Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.11.0}
     hasBin: true
     peerDependencies:
@@ -2779,11 +2779,11 @@ packages:
       mongodb: ^7.0.0
       mssql: ^12.0.0
       mysql2: ^3.15.3
-      oracledb: ^6.3.0
+      oracledb: ^6.3.0 || ^7.0.0
       pg: ^8.5.1
       pg-native: ^3.0.0
       pg-query-stream: ^4.0.0
-      redis: ^5.0.0
+      redis: ^5.0.0 || ^6.0.0
       sql.js: ^1.4.0
       ts-node: ^10.9.2
       typeorm-aurora-data-api-driver: ^3.0.0
@@ -4596,9 +4596,9 @@ snapshots:
     dependencies:
       bser: 2.1.1
 
-  fdir@6.5.0(picomatch@4.0.4):
+  fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
-      picomatch: 4.0.4
+      picomatch: 4.0.5
 
   figures@2.0.0:
     dependencies:
@@ -5928,8 +5928,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.5)
+      picomatch: 4.0.5
 
   tmpl@1.0.5: {}
 
@@ -5985,7 +5985,7 @@ snapshots:
     dependencies:
       tagged-tag: 1.0.0
 
-  typeorm@1.0.0:
+  typeorm@1.1.0:
     dependencies:
       '@sqltools/formatter': 1.2.5
       ansis: 4.3.1
@@ -5996,7 +5996,7 @@ snapshots:
       sql-highlight: 6.1.0
       tinyglobby: 0.2.17
       tslib: 2.8.1
-      yargs: 18.0.0
+      yargs: 18.1.0
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
