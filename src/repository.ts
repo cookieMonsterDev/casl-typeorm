@@ -58,7 +58,7 @@ export const accessibleRecords: AccessibleRecordsExtension = {
     this: Repository<E>,
     ability: AnyAbility,
     action = 'read',
-    options: FindManyOptions<E> = {},
+    options: FindAccessibleOptions<E> = {},
   ) {
     const records = accessibleBy(ability, action);
 
@@ -70,7 +70,7 @@ export const accessibleRecords: AccessibleRecordsExtension = {
       return this.find({ ...options, where });
     }
 
-    const qb = this.createQueryBuilder(this.metadata.targetName).setFindOptions(options);
+    const qb = this.createQueryBuilder(this.metadata.targetName).setFindOptions(options as FindManyOptions<E>);
     return records.applyTo(qb).getMany();
   },
 };
