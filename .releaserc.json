@@ -9,7 +9,18 @@
         "changelogFile": "CHANGELOG.md"
       }
     ],
-    "@semantic-release/npm",
+    [
+      "@semantic-release/exec",
+      {
+        "publishCmd": "npm publish --access public --registry https://registry.npmjs.org/"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
     [
       "@semantic-release/git",
       {
