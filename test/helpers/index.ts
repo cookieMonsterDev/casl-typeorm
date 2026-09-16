@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { describe, it } from 'vitest';
+import { MONGO_ENTITIES } from '../fixtures/mongo-entities';
 import { SQL_ENTITIES } from '../fixtures/sql-entities';
 import { type DbName, dataSourceOptions, getDb, isMongo, isSql } from './db';
 
@@ -20,5 +21,10 @@ export async function createSqlDataSource(): Promise<DataSource> {
     synchronize: true,
     dropSchema: true,
   });
+  return dataSource.initialize();
+}
+
+export async function createMongoDataSource(): Promise<DataSource> {
+  const dataSource = new DataSource({ ...dataSourceOptions(), entities: MONGO_ENTITIES });
   return dataSource.initialize();
 }

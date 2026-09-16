@@ -3,6 +3,7 @@ import type { EntityMetadata, FindOptionsWhere, ObjectLiteral, SelectQueryBuilde
 import { type ConditionTree, rulesToConditionTree } from './condition-tree';
 import { CaslTypeOrmError } from './errors';
 import { conditionTreeToFindOptions } from './find-options';
+import { conditionTreeToMongoQuery } from './mongo-query';
 import { applyConditionTree } from './query-builder';
 
 export interface ApplyToOptions {
@@ -51,6 +52,18 @@ export class AccessibleRecords {
     }
     const subjectType = options.subjectType ?? this.subjectTypeFor(metadata);
     return applyConditionTree(qb, this.conditionTreeFor(subjectType));
+  }
+
+  /**
+   * MongoDB filter for TypeORM's mongodb driver (`repository.find({ where })`), or `null` when the
+   * ability grants no access. Pass the entity metadata so the `@ObjectIdColumn()` property is
+   * renamed to `_id` inside `$nor`/`$or`, which TypeORM does not rewrite itself.
+   */
+  toMongoQuery(subjectType: SubjectType, metadata?: EntityMetadata): ObjectLiteral | null {
+    const tree = this.conditionTreeFor(subjectType);
+    if (!tree) return null;
+    const objectIdProperty = metadata?.objectIdColumn?.propertyName;
+    return conditionTreeToMongoQuery(tree, objectIdProperty && objectIdProperty !== '_id' ? { objectIdProperty } : {});
   }
 
   /** Picks the subject type the ability actually has rules for: the entity class or its name. */
