@@ -18,4 +18,11 @@ module.exports = tseslint.config(
       'no-undef': 'off',
     },
   },
+  {
+    // Release/CI scripts run under Node.js, not the browser lib configured for src/
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
 );

@@ -31,6 +31,8 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
+      - uses: ./.github/actions/require-npm-oidc
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -40,8 +42,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Exchange GitHub OIDC token for an npm publish token
+        run: node scripts/exchange-npm-oidc-token.mjs @cookiemonsterdev/casl-typeorm
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npm-oidc.npmrc
         run: pnpm exec semantic-release
