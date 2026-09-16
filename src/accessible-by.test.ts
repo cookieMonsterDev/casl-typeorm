@@ -30,7 +30,6 @@ describe('accessibleBy', () => {
         { action: 'read', subject: 'Post', conditions: { authorId: 1 } },
       ]);
       const result = accessibleBy(ability, 'read').ofType('Post');
-      // Last defined has highest priority → appears first in result
       expect(result).toEqual([{ authorId: 1 }, { published: true }]);
     });
 
@@ -50,9 +49,7 @@ describe('accessibleBy', () => {
 
     it('applies cannot conditions as NOT constraints (cannot defined last = highest priority)', () => {
       const ability = createTypeOrmAbility([
-        // can defined first = lower priority
         { action: 'read', subject: 'Post', conditions: { published: true } },
-        // cannot defined last = higher priority → constrains the can rule
         { action: 'read', subject: 'Post', conditions: { secret: true }, inverted: true },
       ]);
       const result = accessibleBy(ability, 'read').ofType('Post');
@@ -61,9 +58,7 @@ describe('accessibleBy', () => {
 
     it('applies cannot to unconditional can as standalone NOT condition', () => {
       const ability = createTypeOrmAbility([
-        // can defined first = lower priority
         { action: 'read', subject: 'Post' },
-        // cannot defined last = higher priority
         { action: 'read', subject: 'Post', conditions: { secret: true }, inverted: true },
       ]);
       const result = accessibleBy(ability, 'read').ofType('Post');
@@ -72,14 +67,11 @@ describe('accessibleBy', () => {
 
     it('applies cannot conditions to all can branches', () => {
       const ability = createTypeOrmAbility([
-        // can rules defined first = lower priority
         { action: 'read', subject: 'Post', conditions: { published: true } },
         { action: 'read', subject: 'Post', conditions: { authorId: 1 } },
-        // cannot defined last = highest priority → constrains all can rules
         { action: 'read', subject: 'Post', conditions: { secret: true }, inverted: true },
       ]);
       const result = accessibleBy(ability, 'read').ofType('Post');
-      // Last-defined can rules appear first (authorId was 2nd-to-last, published was first)
       expect(result).toEqual([
         { authorId: 1, secret: Not(true) },
         { published: true, secret: Not(true) },

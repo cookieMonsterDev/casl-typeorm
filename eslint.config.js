@@ -41,11 +41,8 @@ export default tseslint.config(
       'vitest/no-focused-tests': 'error',
       'vitest/no-disabled-tests': 'warn',
       'vitest/no-commented-out-tests': 'error',
-      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expectTypeOf', 'expectSame*'] }],
-      'vitest/no-standalone-expect': [
-        'error',
-        { additionalTestBlockFunctions: ['testIfDb', 'testIfSql', 'testIfMongo'] },
-      ],
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expectTypeOf'] }],
+      'vitest/no-standalone-expect': ['error', { additionalTestBlockFunctions: ['testIfDb'] }],
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',

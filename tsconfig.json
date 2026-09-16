@@ -3,8 +3,6 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    // `src` is not published, so `.d.ts.map` files would only be dead weight in the tarball.
-    "declarationMap": false,
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],

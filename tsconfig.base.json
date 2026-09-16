@@ -16,7 +16,6 @@
     "erasableSyntaxOnly": true,
 
     "declaration": true,
-    "declarationMap": true,
     "sourceMap": true,
     "skipLibCheck": true
   }
