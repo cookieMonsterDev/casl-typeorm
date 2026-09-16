@@ -1,41 +1,30 @@
-import { Not } from 'typeorm';
-import { type FindOptionsWhere } from 'typeorm';
-import { rulesToCondition } from '@casl/ability/extra';
-import { type AnyAbility, type SubjectType } from '@casl/ability';
-
-type WhereGroup = FindOptionsWhere<unknown>[];
-
-function negateConditionFields(conditions: Record<string, unknown>): FindOptionsWhere<unknown> {
-  return Object.fromEntries(Object.entries(conditions).map(([key, value]) => [key, Not(value as never)]));
-}
-
-function convertRule(rule: AnyAbility['rules'][number]): WhereGroup {
-  if (rule.inverted) {
-    if (!rule.conditions) return [];
-    return [negateConditionFields(rule.conditions as Record<string, unknown>)];
-  }
-  return [(rule.conditions as FindOptionsWhere<unknown>) ?? {}];
-}
-
-const TYPEORM_AGGREGATION = {
-  and: (groups: WhereGroup[]): WhereGroup =>
-    groups.reduce((acc, curr) => acc.flatMap((a) => curr.map((c) => ({ ...a, ...c }))), [{}] as WhereGroup),
-  or: (groups: WhereGroup[]): WhereGroup => groups.flat(),
-  empty: (): WhereGroup => [{}],
-};
+import type { AnyAbility, SubjectType } from '@casl/ability';
+import type { FindOptionsWhere, ObjectLiteral } from 'typeorm';
+import { type ConditionTree, rulesToConditionTree } from './condition-tree';
+import { conditionTreeToFindOptions } from './find-options';
 
 export class AccessibleRecords {
-  private readonly _ability: AnyAbility;
-  private readonly _action: string;
+  readonly ability: AnyAbility;
+  readonly action: string;
 
   constructor(ability: AnyAbility, action: string) {
-    this._ability = ability;
-    this._action = action;
+    this.ability = ability;
+    this.action = action;
   }
 
-  ofType<T extends object>(subjectType: SubjectType | (new (...args: never[]) => T)): FindOptionsWhere<T>[] | null {
-    const rules = this._ability.rulesFor(this._action, subjectType);
-    return rulesToCondition(rules, convertRule, TYPEORM_AGGREGATION);
+  /** Condition tree for `subjectType`, or `null` when the ability grants no access. */
+  conditionTreeFor(subjectType: SubjectType): ConditionTree | null {
+    return rulesToConditionTree(this.ability.rulesFor(this.action, subjectType));
+  }
+
+  /**
+   * `FindOptionsWhere[]` for `find()`, `findOne()`, `count()` and friends, or `null` when the
+   * ability grants no access at all. Throws `UnsupportedConditionError` when a `cannot` rule
+   * targets a relation, which `FindOptionsWhere` cannot negate; use `applyTo()` for that.
+   */
+  ofType<T extends ObjectLiteral>(subjectType: SubjectType): FindOptionsWhere<T>[] | null {
+    const tree = this.conditionTreeFor(subjectType);
+    return tree ? (conditionTreeToFindOptions(tree) as FindOptionsWhere<T>[]) : null;
   }
 }
 
