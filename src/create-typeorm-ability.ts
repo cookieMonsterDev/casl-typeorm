@@ -1,26 +1,38 @@
 import {
+  type AbilityOptionsOf,
+  type AbilityTuple,
+  fieldPatternMatcher,
   Ability,
   type RawRuleFrom,
-  type AbilityTuple,
-  type MongoAbility,
-  fieldPatternMatcher,
-  type AbilityOptionsOf,
 } from '@casl/ability';
-import { type FindOptionsWhere } from 'typeorm';
-import { typeormQueryMatcher } from './typeorm-query-matcher';
+import type { FindOptionsWhere, ObjectLiteral } from 'typeorm';
+import { createTypeormQueryMatcher, type TypeOrmMatcherOptions } from './typeorm-query-matcher';
 
-export type TypeOrmAbility<A extends AbilityTuple = AbilityTuple> = MongoAbility<
-  A,
-  FindOptionsWhere<object>
->;
+/** Rule conditions accepted by a `TypeOrmAbility`: TypeORM's `FindOptionsWhere` (or an OR array of them). */
+export type TypeOrmQuery<T extends ObjectLiteral = ObjectLiteral> = FindOptionsWhere<T> | FindOptionsWhere<T>[];
 
+export type TypeOrmAbility<A extends AbilityTuple = AbilityTuple> = Ability<A, TypeOrmQuery>;
+
+export type TypeOrmRawRule<A extends AbilityTuple = AbilityTuple> = RawRuleFrom<A, TypeOrmQuery>;
+
+export type TypeOrmAbilityOptions<A extends AbilityTuple = AbilityTuple> = Omit<
+  AbilityOptionsOf<TypeOrmAbility<A>>,
+  'conditionsMatcher' | 'fieldMatcher'
+> &
+  TypeOrmMatcherOptions;
+
+/**
+ * Creates a CASL ability whose rule conditions are TypeORM `FindOptionsWhere` objects, so the same
+ * conditions drive both `ability.can()` on entity instances and database query filtering.
+ */
 export function createTypeOrmAbility<A extends AbilityTuple = AbilityTuple>(
-  rules: RawRuleFrom<A, FindOptionsWhere<object>>[] = [],
-  options: Omit<AbilityOptionsOf<TypeOrmAbility<A>>, 'conditionsMatcher' | 'fieldMatcher'> = {},
+  rules: TypeOrmRawRule<A>[] = [],
+  options: TypeOrmAbilityOptions<A> = {},
 ): TypeOrmAbility<A> {
-  return new Ability<A, FindOptionsWhere<object>>(rules, {
-    ...options,
-    conditionsMatcher: typeormQueryMatcher as never,
+  const { unloadedRelation, ...abilityOptions } = options;
+  return new Ability<A, TypeOrmQuery>(rules, {
+    ...abilityOptions,
+    conditionsMatcher: createTypeormQueryMatcher({ unloadedRelation }),
     fieldMatcher: fieldPatternMatcher,
   });
 }

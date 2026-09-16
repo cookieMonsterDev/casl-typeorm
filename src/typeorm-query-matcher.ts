@@ -1,155 +1,156 @@
-import { type FindOptionsWhere } from 'typeorm';
+import type { FindOperator, FindOptionsWhere, ObjectLiteral } from 'typeorm';
+import { RelationNotLoadedError, UnsupportedConditionError } from './errors';
+import { isFindOperator, isNestedConditions, isRelationLike, sqlLikeToRegex, valuesEqual } from './find-operator';
 
-function isFindOperator(value: unknown): boolean {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    (value as Record<string, unknown>)['@instanceof'] === Symbol.for('FindOperator')
-  );
+type Comparable = number | bigint | string | Date;
+
+function isComparable(value: unknown): value is Comparable {
+  return typeof value === 'number' || typeof value === 'bigint' || typeof value === 'string' || value instanceof Date;
 }
 
-function sqlLikeToRegex(pattern: string, caseInsensitive: boolean): RegExp {
-  let regexStr = '';
-  for (const char of pattern) {
-    if (char === '%') {
-      regexStr += '.*';
-      continue;
-    }
-    if (char === '_') {
-      regexStr += '.';
-      continue;
-    }
-    regexStr += char.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+function compare(left: unknown, right: unknown, test: (delta: number) => boolean): boolean {
+  if (!isComparable(left) || !isComparable(right)) return false;
+  if (left < right) return test(-1);
+  if (left > right) return test(1);
+  return test(0);
+}
+
+function includes(list: unknown, value: unknown): boolean {
+  return Array.isArray(list) && list.some((item) => valuesEqual(item, value));
+}
+
+/** PostgreSQL `@>` semantics: every key/element of `needle` is contained in `haystack`. */
+function jsonContains(haystack: unknown, needle: unknown): boolean {
+  if (Array.isArray(needle)) {
+    return (
+      Array.isArray(haystack) && needle.every((item) => haystack.some((candidate) => jsonContains(candidate, item)))
+    );
   }
-  return new RegExp(`^${regexStr}$`, caseInsensitive ? 'i' : '');
+  if (isNestedConditions(needle)) {
+    return (
+      isNestedConditions(haystack) && Object.entries(needle).every(([key, value]) => jsonContains(haystack[key], value))
+    );
+  }
+  return valuesEqual(haystack, needle);
 }
 
-function evaluateFindOperator(fieldValue: unknown, op: Record<string, unknown>): boolean {
-  const type = op['type'] as string;
-  const child = op['child'] as Record<string, unknown> | undefined;
-  const value = op['value'] as unknown;
+function evaluateFindOperator(fieldValue: unknown, operator: FindOperator<unknown>): boolean {
+  const { type, value, child } = operator;
 
   switch (type) {
     case 'equal':
-      return fieldValue === value;
-
+      return valuesEqual(fieldValue, value);
     case 'not':
-      if (child) return !evaluateFindOperator(fieldValue, child);
-      return fieldValue !== value;
-
+      return child ? !evaluateFindOperator(fieldValue, child) : !valuesEqual(fieldValue, value);
     case 'lessThan':
-      return (fieldValue as number) < (value as number);
-
+      return compare(fieldValue, value, (delta) => delta < 0);
     case 'lessThanOrEqual':
-      return (fieldValue as number) <= (value as number);
-
+      return compare(fieldValue, value, (delta) => delta <= 0);
     case 'moreThan':
-      return (fieldValue as number) > (value as number);
-
+      return compare(fieldValue, value, (delta) => delta > 0);
     case 'moreThanOrEqual':
-      return (fieldValue as number) >= (value as number);
-
+      return compare(fieldValue, value, (delta) => delta >= 0);
     case 'in':
-      return Array.isArray(value) && value.includes(fieldValue);
-
+    case 'any':
+      return includes(value, fieldValue);
     case 'isNull':
       return fieldValue === null || fieldValue === undefined;
-
     case 'like':
-      return (
-        typeof fieldValue === 'string' && sqlLikeToRegex(value as string, false).test(fieldValue)
-      );
-
+      return typeof fieldValue === 'string' && sqlLikeToRegex(value as string, false).test(fieldValue);
     case 'ilike':
-      return (
-        typeof fieldValue === 'string' && sqlLikeToRegex(value as string, true).test(fieldValue)
-      );
-
+      return typeof fieldValue === 'string' && sqlLikeToRegex(value as string, true).test(fieldValue);
     case 'between': {
       const [lower, upper] = value as [unknown, unknown];
-      return (
-        (fieldValue as number) >= (lower as number) && (fieldValue as number) <= (upper as number)
-      );
+      return compare(fieldValue, lower, (delta) => delta >= 0) && compare(fieldValue, upper, (delta) => delta <= 0);
     }
-
-    case 'and': {
-      const subOps = value as Array<Record<string, unknown>>;
-      return subOps.every((sub) => evaluateFindOperator(fieldValue, sub));
-    }
-
-    case 'or': {
-      const subOps = value as Array<Record<string, unknown>>;
-      return subOps.some((sub) => evaluateFindOperator(fieldValue, sub));
-    }
-
+    case 'and':
+      return (value as FindOperator<unknown>[]).every((sub) => evaluateFindOperator(fieldValue, sub));
+    case 'or':
+      return (value as FindOperator<unknown>[]).some((sub) => evaluateFindOperator(fieldValue, sub));
     case 'arrayContains':
-      return (
-        Array.isArray(fieldValue) &&
-        (value as unknown[]).every((v) => (fieldValue as unknown[]).includes(v))
-      );
-
+      return Array.isArray(fieldValue) && (value as unknown[]).every((item) => includes(fieldValue, item));
     case 'arrayContainedBy':
-      return (
-        Array.isArray(fieldValue) &&
-        (fieldValue as unknown[]).every((v) => (value as unknown[]).includes(v))
-      );
-
+      return Array.isArray(fieldValue) && fieldValue.every((item) => includes(value, item));
     case 'arrayOverlap':
-      return (
-        Array.isArray(fieldValue) &&
-        (value as unknown[]).some((v) => (fieldValue as unknown[]).includes(v))
-      );
-
+      return Array.isArray(fieldValue) && (value as unknown[]).some((item) => includes(fieldValue, item));
+    case 'jsonContains':
+      return jsonContains(fieldValue, value);
     case 'raw':
-      throw new Error(
-        'Raw operator is not supported for runtime ability checks. ' +
-          'It can only be used for database query generation.',
+      throw new UnsupportedConditionError(
+        'Raw operator is not supported for runtime ability checks. It can only be used for database query generation.',
       );
-
     default:
-      throw new Error(`Unsupported FindOperator type: "${type}"`);
+      throw new UnsupportedConditionError(`Unsupported FindOperator type: "${String(type)}"`);
   }
 }
 
-function evaluateConditions(
-  object: Record<string, unknown>,
-  conditions: FindOptionsWhere<unknown>,
+export interface TypeOrmMatcherOptions {
+  /**
+   * What `ability.can()` does when a condition targets a nested property that is `undefined` on the
+   * entity. `'throw'` (default) treats it as a relation that was not loaded and throws, which
+   * catches a missing `relations: { ... }` early. `'deny'` treats it like `null` (no match), which
+   * suits optional embedded documents, e.g. with TypeORM's mongodb driver.
+   */
+  unloadedRelation?: 'throw' | 'deny';
+}
+
+function evaluateRelation(
+  key: string,
+  fieldValue: unknown,
+  conditions: ObjectLiteral | ObjectLiteral[],
+  options: TypeOrmMatcherOptions,
 ): boolean {
-  for (const [key, condition] of Object.entries(conditions)) {
-    const fieldValue = object[key];
+  if (fieldValue === undefined && options.unloadedRelation !== 'deny') {
+    throw new RelationNotLoadedError(key);
+  }
+  if (fieldValue === null || fieldValue === undefined) return false;
+  // A to-many relation matches when at least one related record matches (EXISTS semantics).
+  if (Array.isArray(fieldValue)) {
+    return fieldValue.some((item: unknown) => evaluateWhere(item as ObjectLiteral, conditions, options));
+  }
+  return evaluateWhere(fieldValue, conditions, options);
+}
+
+function evaluateWhere(
+  object: ObjectLiteral,
+  conditions: ObjectLiteral | ObjectLiteral[],
+  options: TypeOrmMatcherOptions,
+): boolean {
+  if (Array.isArray(conditions)) {
+    return conditions.some((branch: ObjectLiteral) => evaluateWhere(object, branch, options));
+  }
+
+  for (const [key, condition] of Object.entries<unknown>(conditions)) {
+    if (condition === undefined) continue;
+    const fieldValue: unknown = object[key];
 
     if (isFindOperator(condition)) {
-      if (!evaluateFindOperator(fieldValue, condition as Record<string, unknown>)) {
-        return false;
-      }
-      continue;
+      if (!evaluateFindOperator(fieldValue, condition)) return false;
+    } else if (isRelationLike(condition)) {
+      if (!evaluateRelation(key, fieldValue, condition, options)) return false;
+    } else if (Array.isArray(condition)) {
+      if (!includes(condition, fieldValue)) return false;
+    } else if (condition === null) {
+      // `null` means IS NULL, as in the SQL backends; a missing property counts as null.
+      if (fieldValue !== null && fieldValue !== undefined) return false;
+    } else if (!valuesEqual(fieldValue, condition)) {
+      return false;
     }
-    if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
-      if (fieldValue === undefined) {
-        throw new Error(
-          `Relation "${key}" is not loaded. Load the relation before checking ability.can().`,
-        );
-      }
-      if (fieldValue === null) {
-        return false;
-      }
-      if (
-        !evaluateConditions(
-          fieldValue as Record<string, unknown>,
-          condition as FindOptionsWhere<unknown>,
-        )
-      ) {
-        return false;
-      }
-      continue;
-    }
-    if (fieldValue !== condition) return false;
   }
   return true;
 }
 
-export function typeormQueryMatcher(
-  conditions: FindOptionsWhere<unknown>,
-): (object: unknown) => boolean {
-  return (object: unknown) => evaluateConditions(object as Record<string, unknown>, conditions);
+export type TypeOrmQueryMatcher = <T extends ObjectLiteral>(
+  conditions: FindOptionsWhere<T> | FindOptionsWhere<T>[],
+) => (object: T) => boolean;
+
+/** Builds a CASL conditions matcher for TypeORM `FindOptionsWhere` conditions. */
+export function createTypeormQueryMatcher(options: TypeOrmMatcherOptions = {}): TypeOrmQueryMatcher {
+  return (conditions) => (object) => evaluateWhere(object, conditions, options);
 }
+
+/**
+ * CASL conditions matcher for TypeORM `FindOptionsWhere` conditions, used by `ability.can()` on
+ * entity instances. Relations referenced by a condition must be loaded on the entity.
+ */
+export const typeormQueryMatcher: TypeOrmQueryMatcher = createTypeormQueryMatcher();

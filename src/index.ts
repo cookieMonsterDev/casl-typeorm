@@ -1,4 +1,11 @@
 export { accessibleBy, AccessibleRecords } from './accessible-by';
+export type { ApplyToOptions } from './accessible-by';
+export type { ConditionTree } from './condition-tree';
 export { createTypeOrmAbility } from './create-typeorm-ability';
-export type { TypeOrmAbility } from './create-typeorm-ability';
-export { typeormQueryMatcher } from './typeorm-query-matcher';
+export type { TypeOrmAbility, TypeOrmAbilityOptions, TypeOrmQuery, TypeOrmRawRule } from './create-typeorm-ability';
+export { CaslTypeOrmError, RelationNotLoadedError, UnsupportedConditionError } from './errors';
+export type { MongoQueryOptions } from './mongo-query';
+export { accessibleRecords } from './repository';
+export type { AccessibleRecordsExtension, FindAccessibleOptions } from './repository';
+export { createTypeormQueryMatcher, typeormQueryMatcher } from './typeorm-query-matcher';
+export type { TypeOrmMatcherOptions, TypeOrmQueryMatcher } from './typeorm-query-matcher';

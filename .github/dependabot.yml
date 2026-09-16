@@ -22,16 +22,22 @@ updates:
           - 'typescript*'
           - 'typescript-eslint'
           - '@types/*'
-          - 'ts-jest'
       eslint:
         patterns:
           - 'eslint*'
           - '@eslint/*'
       testing:
         patterns:
-          - 'jest*'
-          - '@jest/*'
-          - '@types/jest'
+          - 'vitest'
+          - '@vitest/*'
+          - 'vite'
+      database-drivers:
+        patterns:
+          - 'better-sqlite3'
+          - 'pg'
+          - 'mysql2'
+          - 'mssql'
+          - 'mongodb'
       formatting:
         patterns:
           - 'prettier*'

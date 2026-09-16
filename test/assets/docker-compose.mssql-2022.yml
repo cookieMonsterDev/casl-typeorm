@@ -1,0 +1,28 @@
+# SQL Server 2022 for `DB=mssql pnpm test:integration`. The image is amd64-only; on Apple Silicon
+# Docker Desktop runs it under emulation, which is slow to start (hence the long start_period).
+# Tests use the `master` database because IDENTITY_INSERT and database creation are out of scope.
+name: casl-typeorm-mssql-2022
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    ports:
+      - '51433:1433'
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 'Casl_Typeorm_1!'
+      MSSQL_PID: Developer
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "Casl_Typeorm_1!" -Q "SELECT 1" -b -o /dev/null',
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 60
+      start_period: 30s
+    labels:
+      custom.project: casl-typeorm
+      custom.service: mssql
