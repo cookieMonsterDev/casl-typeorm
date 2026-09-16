@@ -39,8 +39,7 @@ export class AccessibleRecords {
   ): FindOptionsWhere<T>[] | null {
     const rules = this._ability.rulesFor(this._action, subjectType as SubjectType);
     return rulesToCondition(rules, convertRule, TYPEORM_AGGREGATION) as
-      | FindOptionsWhere<T>[]
-      | null;
+      FindOptionsWhere<T>[] | null;
   }
 }
 
