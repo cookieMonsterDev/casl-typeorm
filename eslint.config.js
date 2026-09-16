@@ -52,5 +52,14 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'off',
     },
   },
+  {
+    // Helpers build gated `it` variants (e.g. `it.skipIf(...)`); they are not tests themselves.
+    files: ['test/helpers/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'vitest/expect-expect': 'off',
+      'vitest/valid-title': 'off',
+    },
+  },
   prettierConfig,
 );
