@@ -13,7 +13,7 @@ export class PostAuthor {
   @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   banned!: boolean;
 }
 
@@ -31,10 +31,10 @@ export class Post {
   @Column({ type: 'int' })
   views!: number;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   secret!: boolean;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   internal!: boolean;
 
   @Column({ type: 'array' })

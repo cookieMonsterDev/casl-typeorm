@@ -24,10 +24,10 @@ export class User {
   @Column({ type: 'varchar', length: 16 })
   role!: Role;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   isVerified!: boolean;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   banned!: boolean;
 
   @OneToOne(() => Profile, (profile) => profile.user)
@@ -72,7 +72,7 @@ export class Category {
   @Column({ type: 'varchar', length: 64 })
   name!: string;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   restricted!: boolean;
 
   @ManyToMany(() => Article, (article) => article.categories)
@@ -93,13 +93,13 @@ export class Article {
   @Column({ type: 'int' })
   views!: number;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   published!: boolean;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   secret!: boolean;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   internal!: boolean;
 
   @Column({ type: 'varchar', length: 64, nullable: true })
@@ -133,7 +133,7 @@ export class Comment {
   @Column({ type: 'varchar', length: 255 })
   body!: string;
 
-  @Column({ type: 'boolean' })
+  @Column({ type: Boolean })
   approved!: boolean;
 
   @ManyToOne(() => Article, (article) => article.comments, { onDelete: 'CASCADE' })
