@@ -1,3 +1,9 @@
+# [1.1.0](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.5...v1.1.0) (2026-09-16)
+
+### Features
+
+- **release:** publish to npm via trusted publishing (OIDC) ([#33](https://github.com/cookieMonsterDev/casl-typeorm/issues/33)) ([aec0b88](https://github.com/cookieMonsterDev/casl-typeorm/commit/aec0b8867d4e3417b904011a88e55feee8b42de3))
+
 ## [1.0.5](https://github.com/cookieMonsterDev/casl-typeorm/compare/v1.0.4...v1.0.5) (2026-06-22)
 
 ### Bug Fixes
