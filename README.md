@@ -179,9 +179,8 @@ ability.can('read', subject('Article', article));
 ```
 
 - Nested conditions require the relation to be loaded. If the property is `undefined`, the check throws
-  `Relation "author" is not loaded. Load the relation before checking ability.can().` Pass
-  `{ unloadedRelation: 'deny' }` to treat missing values as `null` (no match) instead, e.g. for optional embedded
-  documents.
+  `RelationNotLoadedError` (`Relation "author" is not loaded. …`). Pass `{ unloadedRelation: 'deny' }` to treat
+  missing values as `null` (no match) instead, e.g. for optional embedded documents.
 - A `null` relation never matches a nested condition.
 - To-many relations match when at least one related record matches, mirroring `EXISTS`.
 - `Date`, `Buffer` and `ObjectId` values compare by value; ordered comparisons (`MoreThan`, `Between`, …) against `null`
@@ -267,8 +266,9 @@ The conditions matcher used by `createTypeOrmAbility`.
 
 ### Errors
 
-`CaslTypeOrmError` is the base class; `UnsupportedConditionError` signals a condition the requested backend cannot
-express.
+`CaslTypeOrmError` is the base class of every error this package throws. `UnsupportedConditionError` signals a
+condition the requested backend cannot express; `RelationNotLoadedError` is thrown by `ability.can()` for an unloaded
+relation.
 
 ## Migrating from v1
 

@@ -1,7 +1,13 @@
 import { type AnyAbility, subject } from '@casl/ability';
 import { Between, type DataSource, In, IsNull, Like, MoreThan, Not } from 'typeorm';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { accessibleBy, createTypeOrmAbility, type TypeOrmRawRule, UnsupportedConditionError } from '../../../src';
+import {
+  accessibleBy,
+  CaslTypeOrmError,
+  createTypeOrmAbility,
+  type TypeOrmRawRule,
+  UnsupportedConditionError,
+} from '../../../src';
 import { Article } from '../../fixtures/sql-entities';
 import { seedSql, type SqlSeed } from '../../fixtures/sql-seed';
 import { createSqlDataSource, describeIfSql } from '../../helpers';
@@ -290,6 +296,13 @@ describeIfSql('accessibleBy on a SQL database', () => {
     const qb = dataSource.getRepository(Article).createQueryBuilder('a');
     const rows = await accessibleBy(ability).applyTo(qb, { subjectType: 'Post' }).getMany();
     expect(rows.map((a) => a.title)).toEqual(['bob-draft']);
+  });
+
+  it('rejects query builders that select a raw table instead of an entity', () => {
+    const ability = createTypeOrmAbility([{ action: 'read', subject: 'Article' }]);
+    const qb = dataSource.createQueryBuilder().select('*').from('not_an_entity', 'raw');
+    expect(() => accessibleBy(ability).applyTo(qb)).toThrow(CaslTypeOrmError);
+    expect(() => accessibleBy(ability).applyTo(qb)).toThrow(/selects an entity/);
   });
 
   it('rejects unknown properties with a clear error', () => {

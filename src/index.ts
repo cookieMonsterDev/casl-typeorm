@@ -3,7 +3,7 @@ export type { ApplyToOptions } from './accessible-by';
 export type { ConditionTree } from './condition-tree';
 export { createTypeOrmAbility } from './create-typeorm-ability';
 export type { TypeOrmAbility, TypeOrmAbilityOptions, TypeOrmQuery, TypeOrmRawRule } from './create-typeorm-ability';
-export { CaslTypeOrmError, UnsupportedConditionError } from './errors';
+export { CaslTypeOrmError, RelationNotLoadedError, UnsupportedConditionError } from './errors';
 export type { MongoQueryOptions } from './mongo-query';
 export { accessibleRecords } from './repository';
 export type { AccessibleRecordsExtension, FindAccessibleOptions } from './repository';

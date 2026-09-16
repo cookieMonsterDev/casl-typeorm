@@ -1,5 +1,5 @@
 import type { FindOperator, FindOptionsWhere, ObjectLiteral } from 'typeorm';
-import { UnsupportedConditionError } from './errors';
+import { RelationNotLoadedError, UnsupportedConditionError } from './errors';
 import { isFindOperator, isNestedConditions, isRelationLike, sqlLikeToRegex, valuesEqual } from './find-operator';
 
 type Comparable = number | bigint | string | Date;
@@ -101,7 +101,7 @@ function evaluateRelation(
   options: TypeOrmMatcherOptions,
 ): boolean {
   if (fieldValue === undefined && options.unloadedRelation !== 'deny') {
-    throw new Error(`Relation "${key}" is not loaded. Load the relation before checking ability.can().`);
+    throw new RelationNotLoadedError(key);
   }
   if (fieldValue === null || fieldValue === undefined) return false;
   // A to-many relation matches when at least one related record matches (EXISTS semantics).

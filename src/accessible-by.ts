@@ -1,10 +1,9 @@
 import type { AnyAbility, SubjectType } from '@casl/ability';
 import type { EntityMetadata, FindOptionsWhere, ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 import { type ConditionTree, rulesToConditionTree } from './condition-tree';
-import { CaslTypeOrmError } from './errors';
 import { conditionTreeToFindOptions } from './find-options';
 import { conditionTreeToMongoQuery } from './mongo-query';
-import { applyConditionTree } from './query-builder';
+import { applyConditionTree, entityMetadataOf } from './query-builder';
 
 export interface ApplyToOptions {
   /**
@@ -44,13 +43,7 @@ export class AccessibleRecords {
    * are exact. When the ability grants no access the query returns no rows.
    */
   applyTo<T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, options: ApplyToOptions = {}): SelectQueryBuilder<T> {
-    const metadata = qb.expressionMap.mainAlias?.metadata;
-    if (!metadata) {
-      throw new CaslTypeOrmError(
-        'applyTo() needs a query builder that selects an entity, e.g. repository.createQueryBuilder("alias").',
-      );
-    }
-    const subjectType = options.subjectType ?? this.subjectTypeFor(metadata);
+    const subjectType = options.subjectType ?? this.subjectTypeFor(entityMetadataOf(qb));
     return applyConditionTree(qb, this.conditionTreeFor(subjectType));
   }
 

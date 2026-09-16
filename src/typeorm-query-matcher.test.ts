@@ -20,6 +20,7 @@ import {
   Or,
   Raw,
 } from 'typeorm';
+import { CaslTypeOrmError, RelationNotLoadedError } from './errors';
 import { createTypeormQueryMatcher, typeormQueryMatcher } from './typeorm-query-matcher';
 
 function matches(conditions: object, entity: object): boolean {
@@ -152,9 +153,7 @@ describe('typeormQueryMatcher', () => {
     });
 
     it('throws when nested relation field is undefined (not loaded)', () => {
-      expect(() => matches({ author: { id: 1 } }, {})).toThrow(
-        'Relation "author" is not loaded. Load the relation before checking ability.can().',
-      );
+      expect(() => matches({ author: { id: 1 } }, {})).toThrow(/Relation "author" is not loaded/);
     });
   });
 
@@ -270,5 +269,12 @@ describe('typeormQueryMatcher › null conditions', () => {
     expect(matches({ deletedAt: null }, { deletedAt: null })).toBe(true);
     expect(matches({ deletedAt: null }, {})).toBe(true);
     expect(matches({ deletedAt: null }, { deletedAt: 'x' })).toBe(false);
+  });
+});
+
+describe('typeormQueryMatcher › errors', () => {
+  it('throws RelationNotLoadedError, a CaslTypeOrmError, for unloaded relations', () => {
+    expect(() => matches({ author: { id: 1 } }, {})).toThrow(RelationNotLoadedError);
+    expect(() => matches({ author: { id: 1 } }, {})).toThrow(CaslTypeOrmError);
   });
 });

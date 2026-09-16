@@ -28,6 +28,18 @@ function raw(sql: string): Brackets {
   return new Brackets((where) => where.where(sql));
 }
 
+/** Entity metadata of the query builder's main alias; throws when the builder selects a raw table. */
+export function entityMetadataOf(qb: SelectQueryBuilder<ObjectLiteral>): EntityMetadata {
+  const mainAlias = qb.expressionMap.mainAlias;
+  // `Alias.metadata` itself throws a TypeORMError, so check `hasMetadata` first.
+  if (!mainAlias?.hasMetadata) {
+    throw new CaslTypeOrmError(
+      'applyTo() needs a query builder that selects an entity, e.g. repository.createQueryBuilder("alias").',
+    );
+  }
+  return mainAlias.metadata;
+}
+
 /**
  * Adds the condition tree to the query builder's WHERE clause. Relation conditions become
  * correlated `EXISTS` subqueries, so `cannot` rules on relations negate exactly and to-many
@@ -37,16 +49,11 @@ export function applyConditionTree<T extends ObjectLiteral>(
   qb: SelectQueryBuilder<T>,
   tree: ConditionTree | null,
 ): SelectQueryBuilder<T> {
-  const mainAlias = qb.expressionMap.mainAlias;
-  if (!mainAlias?.hasMetadata) {
-    throw new CaslTypeOrmError(
-      'applyTo() needs a query builder that selects an entity, e.g. repository.createQueryBuilder("alias").',
-    );
-  }
+  const metadata = entityMetadataOf(qb);
   if (!tree) return qb.andWhere(raw('1 = 0'));
 
   const context: Context = { root: qb, aliasCount: 0 };
-  const scope: Scope = { qb, alias: mainAlias.name, metadata: mainAlias.metadata };
+  const scope: Scope = { qb, alias: qb.expressionMap.mainAlias!.name, metadata };
   return qb.andWhere(compileTree(context, scope, tree));
 }
 
