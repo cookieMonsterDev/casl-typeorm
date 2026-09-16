@@ -45,7 +45,9 @@ Notes:
 Import from `test/helpers`:
 
 - `describeIfSql` / `describeIfMongo` — whole suites for SQL databases or MongoDB.
-- `testIfDb('postgres', 'mysql')` — a single test for the listed databases (e.g. PostgreSQL array or JSONB operators).
+- `testIfDb('postgres', 'mysql')` — a single test for the listed databases.
+- `describeIfDb('postgres')` — a whole suite for the listed databases (e.g. PostgreSQL array or JSONB operators, whose
+  fixture entity only exists there).
 
 Do not parse `DB` in a test file.
 

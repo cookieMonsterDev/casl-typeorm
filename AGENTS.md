@@ -22,7 +22,8 @@ After every completed change (or batch), walk this list. Mark each item **done**
    - Compiler or matcher change: unit tests beside the source (`src/**/*.test.ts`).
    - Behaviour that depends on the database: a scenario in `test/suites/sql/accessible-by.test.ts` (it cross-checks
      `applyTo()`, `find()` and `ability.can()`) or a Mongo scenario in `test/suites/mongo/`. Gate driver-specific tests
-     with `testIfDb('postgres')`, `describeIfSql`, `describeIfMongo`; never read `DB` in a test file.
+     with `testIfDb('postgres')`, `describeIfDb('postgres')`, `describeIfSql`, `describeIfMongo`; never read `DB` in a
+     test file.
    - Unit tests never start Docker. Integration tests run in-process on sqlite by default and need Docker for the other
      databases unless `DB_EXTERNAL=1`.
 4. **Docs** — Public API, semantics or operator support: update `README.md` (API table, operator table, caveats).

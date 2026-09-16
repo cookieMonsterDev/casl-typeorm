@@ -96,8 +96,8 @@ Guidelines:
 
 - Behaviour that differs by backend gets a scenario in the table-driven suite (`test/suites/sql/accessible-by.test.ts`),
   which cross-checks `applyTo()`, `find()` and `ability.can()` against each other.
-- Gate driver-specific tests with `testIfDb('postgres')`, `describeIfSql`, `describeIfMongo` from `test/helpers`
-  instead of reading `DB` in the test file.
+- Gate driver-specific tests with `testIfDb('postgres')`, `describeIfDb('postgres')`, `describeIfSql`, `describeIfMongo`
+  from `test/helpers` instead of reading `DB` in the test file.
 - Fixture columns declare a portable `type` (`Boolean`, `Date`, `'varchar'`, `'int'`); esbuild emits no decorator
   metadata, so TypeORM cannot infer types.
 
