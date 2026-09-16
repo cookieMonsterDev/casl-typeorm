@@ -1,6 +1,6 @@
 {
   "name": "@cookiemonsterdev/casl-typeorm",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "TypeORM integration for CASL — filter find() queries, query builders and MongoDB filters by ability rules, including permissions on related records",
   "type": "module",
   "license": "MIT",
