@@ -13,11 +13,19 @@ export const DB_NAMES: readonly DbName[] = ['sqlite', 'postgres', 'mysql', 'mssq
  * entry is the default); `COMPOSE_FILE` overrides both. Mirrored in scripts/resolve-compose-file.sh.
  * @see ../assets/README.md
  */
-export const DB_COMPOSE_FILES: Readonly<Record<Exclude<DbName, 'sqlite'>, Readonly<Record<string, string>>>> = {
-  postgres: { '17': 'docker-compose.postgres-17.yml', '15': 'docker-compose.postgres-15.yml' },
-  mysql: { '9': 'docker-compose.mysql-9.yml', '8': 'docker-compose.mysql-8.yml' },
-  mssql: { '2022': 'docker-compose.mssql-2022.yml' },
-  mongodb: { '8': 'docker-compose.mongodb-8.yml' },
+export const DB_COMPOSE_FILES: Readonly<Record<Exclude<DbName, 'sqlite'>, ReadonlyArray<readonly [string, string]>>> = {
+  // Arrays, not objects: JS enumerates integer-like keys in ascending order, which would make the
+  // oldest version the default.
+  postgres: [
+    ['17', 'docker-compose.postgres-17.yml'],
+    ['15', 'docker-compose.postgres-15.yml'],
+  ],
+  mysql: [
+    ['9', 'docker-compose.mysql-9.yml'],
+    ['8', 'docker-compose.mysql-8.yml'],
+  ],
+  mssql: [['2022', 'docker-compose.mssql-2022.yml']],
+  mongodb: [['8', 'docker-compose.mongodb-8.yml']],
 };
 
 export function getDb(env: NodeJS.ProcessEnv = process.env): DbName {
@@ -50,9 +58,9 @@ export function resolveComposeFile(env: NodeJS.ProcessEnv = process.env): string
   if (db === 'sqlite') return null;
 
   const files = DB_COMPOSE_FILES[db];
-  const versions = Object.keys(files);
+  const versions = files.map(([version]) => version);
   const version = env.DB_VERSION?.trim() || versions[0]!;
-  const fileName = files[version];
+  const fileName = files.find(([candidate]) => candidate === version)?.[1];
   if (!fileName) {
     throw new Error(`Unsupported DB_VERSION=${version} for DB=${db}. Known versions: ${versions.join(', ')}`);
   }

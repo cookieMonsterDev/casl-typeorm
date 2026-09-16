@@ -1,0 +1,23 @@
+# MySQL 9 for `DB=mysql DB_VERSION=9 pnpm test:integration`. The mysql2 driver authenticates with
+# caching_sha2_password, so no legacy auth plugin is configured.
+name: casl-typeorm-mysql-9
+
+services:
+  mysql:
+    image: mysql:9
+    ports:
+      - '53306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: casl
+      MYSQL_PASSWORD: casl
+      MYSQL_DATABASE: casl
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -ucasl -pcasl --silent']
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 10s
+    labels:
+      custom.project: casl-typeorm
+      custom.service: mysql
