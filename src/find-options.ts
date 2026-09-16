@@ -1,7 +1,7 @@
-import { And, Equal, type FindOperator, In, Not, type ObjectLiteral } from 'typeorm';
+import { And, Equal, type FindOperator, Not, type ObjectLiteral } from 'typeorm';
 import type { ConditionTree } from './condition-tree';
 import { UnsupportedConditionError } from './errors';
-import { isConditionsList, isFindOperator, isNestedConditions } from './find-operator';
+import { isFindOperator, isNestedConditions, isRelationLike, normalizeValue } from './find-operator';
 
 /**
  * Compiles a condition tree into TypeORM's `FindOptionsWhere[]` (an OR of AND-merged objects).
@@ -14,14 +14,26 @@ export function conditionTreeToFindOptions(tree: ConditionTree): ObjectLiteral[]
     case 'always':
       return [{}];
     case 'where':
-      return [tree.conditions];
+      return [normalizeWhere(tree.conditions)];
     case 'or':
       return tree.nodes.flatMap(conditionTreeToFindOptions);
     case 'and':
-      return tree.nodes.map(conditionTreeToFindOptions).reduce(crossMerge, [{}]);
+      return tree.nodes.map(conditionTreeToFindOptions).reduce(distributeAnd, [{}]);
     case 'not':
       return negate(tree.node);
   }
+}
+
+/** Replaces `null` with `IsNull()` and scalar arrays with `In()`, recursing into relation objects. */
+function normalizeWhere(conditions: ObjectLiteral): ObjectLiteral {
+  const normalized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries<unknown>(conditions)) {
+    if (value === undefined) continue;
+    if (isNestedConditions(value)) normalized[key] = normalizeWhere(value);
+    else if (Array.isArray(value) && isRelationLike(value)) normalized[key] = value.map(normalizeWhere);
+    else normalized[key] = normalizeValue(value);
+  }
+  return normalized;
 }
 
 function negate(tree: ConditionTree): ObjectLiteral[] {
@@ -32,7 +44,7 @@ function negate(tree: ConditionTree): ObjectLiteral[] {
       return conditionTreeToFindOptions(tree.node);
     // De Morgan: NOT (a OR b) = NOT a AND NOT b
     case 'or':
-      return tree.nodes.map(negate).reduce(crossMerge, [{}]);
+      return tree.nodes.map(negate).reduce(distributeAnd, [{}]);
     // De Morgan: NOT (a AND b) = NOT a OR NOT b
     case 'and':
       return tree.nodes.flatMap(negate);
@@ -46,18 +58,19 @@ function negateWhere(conditions: ObjectLiteral): ObjectLiteral[] {
   const branches: ObjectLiteral[] = [];
   for (const [key, value] of Object.entries(conditions)) {
     if (value === undefined) continue;
-    if (isNestedConditions(value) || isConditionsList(value)) {
+    if (isRelationLike(value)) {
       throw new UnsupportedConditionError(
         `FindOptionsWhere cannot express a "cannot" rule on relation "${key}". ` +
           'Use accessibleBy(ability, action).applyTo(queryBuilder) or the accessibleRecords repository extension instead.',
       );
     }
-    branches.push({ [key]: Not(Array.isArray(value) ? In(value) : value) });
+    branches.push({ [key]: Not(normalizeValue(value)) });
   }
   return branches;
 }
 
-function crossMerge(left: ObjectLiteral[], right: ObjectLiteral[]): ObjectLiteral[] {
+/** `(a OR b) AND (c OR d)` as an OR of merged objects: `[ac, ad, bc, bd]`. */
+function distributeAnd(left: ObjectLiteral[], right: ObjectLiteral[]): ObjectLiteral[] {
   return left.flatMap((a) => right.map((b) => mergeWhere(a, b)));
 }
 
@@ -83,14 +96,9 @@ function mergeValues(key: string, left: unknown, right: unknown): unknown {
   return And(...flattenAnd(toOperator(left)), ...flattenAnd(toOperator(right)));
 }
 
-function isRelationLike(value: unknown): boolean {
-  return isNestedConditions(value) || isConditionsList(value);
-}
-
 function toOperator(value: unknown): FindOperator<unknown> {
-  if (isFindOperator(value)) return value;
-  if (Array.isArray(value)) return In(value);
-  return Equal(value);
+  const normalized = normalizeValue(value);
+  return isFindOperator(normalized) ? normalized : Equal(normalized);
 }
 
 function flattenAnd(operator: FindOperator<unknown>): FindOperator<unknown>[] {

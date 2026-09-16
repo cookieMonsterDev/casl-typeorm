@@ -1,7 +1,7 @@
 import type { FindOperator, ObjectLiteral } from 'typeorm';
 import type { ConditionTree } from './condition-tree';
 import { UnsupportedConditionError } from './errors';
-import { isConditionsList, isFindOperator, isNestedConditions, sqlLikeToRegex } from './find-operator';
+import { isFindOperator, isRelationLike, sqlLikeToRegex } from './find-operator';
 
 export interface MongoQueryOptions {
   /** Entity property that maps to `_id` (TypeORM's `@ObjectIdColumn()`), renamed in the output. */
@@ -46,8 +46,7 @@ function whereToMongo(
     const property = !prefix && key === options.objectIdProperty ? '_id' : key;
     const path = prefix ? `${prefix}.${property}` : property;
 
-    if (isNestedConditions(value)) clauses.push(whereToMongo(value, path, options));
-    else if (isConditionsList(value)) clauses.push(whereToMongo(value, path, options));
+    if (isRelationLike(value)) clauses.push(whereToMongo(value, path, options));
     else if (isFindOperator(value)) clauses.push(operatorToMongo(path, value));
     else if (Array.isArray(value)) clauses.push({ [path]: { $in: value } });
     else clauses.push({ [path]: value });

@@ -79,6 +79,14 @@ const scenarios: Scenario[] = [
     expected: ['alice-public', 'bob-tech', 'carol-banned', 'bob-draft', 'orphan', 'dave-internal-only'],
   },
   {
+    name: 'null means IS NULL and arrays mean IN, in can and cannot rules',
+    rules: () => [
+      { action: 'read', subject: 'Article', conditions: { deletedReason: null, status: ['published', 'archived'] } },
+      { action: 'read', subject: 'Article', conditions: { authorId: null }, inverted: true },
+    ],
+    expected: except('bob-draft', 'carol-banned', 'dave-internal-only', 'orphan', 'orphan-classified'),
+  },
+  {
     name: 'date comparison',
     rules: () => [
       { action: 'read', subject: 'Article', conditions: { createdAt: MoreThan(new Date(Date.UTC(2024, 0, 8))) } },

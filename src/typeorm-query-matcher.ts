@@ -1,6 +1,6 @@
 import type { FindOperator, FindOptionsWhere, ObjectLiteral } from 'typeorm';
 import { UnsupportedConditionError } from './errors';
-import { isConditionsList, isFindOperator, isNestedConditions, sqlLikeToRegex, valuesEqual } from './find-operator';
+import { isFindOperator, isNestedConditions, isRelationLike, sqlLikeToRegex, valuesEqual } from './find-operator';
 
 type Comparable = number | bigint | string | Date;
 
@@ -126,10 +126,13 @@ function evaluateWhere(
 
     if (isFindOperator(condition)) {
       if (!evaluateFindOperator(fieldValue, condition)) return false;
-    } else if (isNestedConditions(condition) || isConditionsList(condition)) {
+    } else if (isRelationLike(condition)) {
       if (!evaluateRelation(key, fieldValue, condition, options)) return false;
     } else if (Array.isArray(condition)) {
       if (!includes(condition, fieldValue)) return false;
+    } else if (condition === null) {
+      // `null` means IS NULL, as in the SQL backends; a missing property counts as null.
+      if (fieldValue !== null && fieldValue !== undefined) return false;
     } else if (!valuesEqual(fieldValue, condition)) {
       return false;
     }

@@ -264,3 +264,11 @@ describe('createTypeormQueryMatcher', () => {
     expect(() => strict({})).toThrow(/not loaded/);
   });
 });
+
+describe('typeormQueryMatcher › null conditions', () => {
+  it('treats a null condition as IS NULL, matching null and missing values', () => {
+    expect(matches({ deletedAt: null }, { deletedAt: null })).toBe(true);
+    expect(matches({ deletedAt: null }, {})).toBe(true);
+    expect(matches({ deletedAt: null }, { deletedAt: 'x' })).toBe(false);
+  });
+});

@@ -223,6 +223,9 @@ Query backends accept every TypeORM `FindOperator` that TypeORM itself supports 
 
 ## Semantics and caveats
 
+- **`null` and arrays.** A `null` condition value means `IS NULL` and a plain array means `IN` in every backend and in
+  `ability.can()`; TypeORM alone would compile both to `=`. `cannot(..., { deletedAt: null })` therefore becomes
+  `Not(IsNull())`.
 - **SQL `NULL` under negation.** `cannot('read', 'Article', { secret: true })` compiles to `NOT (secret = true)`, which
   SQL evaluates to `NULL` (excluded) when `secret` is `NULL`, while `ability.can()` on the same entity returns `true`
   (`null !== true`). Make nullable columns explicit in rules (`IsNull()`) or avoid negating nullable columns. MongoDB's

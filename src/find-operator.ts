@@ -1,4 +1,4 @@
-import { type FindOperator, InstanceChecker, type ObjectLiteral } from 'typeorm';
+import { type FindOperator, In, InstanceChecker, IsNull, type ObjectLiteral } from 'typeorm';
 
 export function isFindOperator(value: unknown): value is FindOperator<unknown> {
   return InstanceChecker.isFindOperator(value);
@@ -18,6 +18,21 @@ export function isNestedConditions(value: unknown): value is ObjectLiteral {
 /** TypeORM's OR form for a relation: `{ author: [{ id: 1 }, { role: 'admin' }] }`. */
 export function isConditionsList(value: unknown): value is ObjectLiteral[] {
   return Array.isArray(value) && value.length > 0 && value.every(isNestedConditions);
+}
+
+/** A condition value that addresses a relation or embedded object rather than a column value. */
+export function isRelationLike(value: unknown): value is ObjectLiteral | ObjectLiteral[] {
+  return isNestedConditions(value) || isConditionsList(value);
+}
+
+/**
+ * Gives `null` and plain arrays the meaning `typeormQueryMatcher` applies to them (`IS NULL`, `IN`)
+ * before TypeORM sees them; TypeORM itself would compile both to `=`, which never matches.
+ */
+export function normalizeValue(value: unknown): unknown {
+  if (value === null) return IsNull();
+  if (Array.isArray(value) && !isConditionsList(value)) return In(value);
+  return value;
 }
 
 /**

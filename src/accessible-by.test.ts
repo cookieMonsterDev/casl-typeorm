@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { And, In, MoreThan, Not } from 'typeorm';
+import { And, In, IsNull, MoreThan, Not } from 'typeorm';
 import { UnsupportedConditionError } from './errors';
 import { accessibleBy } from './accessible-by';
 import { createTypeOrmAbility } from './create-typeorm-ability';
@@ -205,5 +205,31 @@ describe('accessibleBy › boolean semantics', () => {
     class Post {}
     const ability = createTypeOrmAbility([{ action: 'read', subject: Post, conditions: { published: true } }]);
     expect(accessibleBy(ability).ofType(Post)).toEqual([{ published: true }]);
+  });
+});
+
+describe('accessibleBy › null and array normalisation', () => {
+  it('compiles null to IsNull() and scalar arrays to In(), like the matcher reads them', () => {
+    const ability = createTypeOrmAbility([
+      { action: 'read', subject: 'Post', conditions: { deletedAt: null, status: ['draft', 'published'] } },
+    ]);
+    expect(accessibleBy(ability).ofType('Post')).toEqual([{ deletedAt: IsNull(), status: In(['draft', 'published']) }]);
+  });
+
+  it('negates null as Not(IsNull()) instead of the never-true Not(null)', () => {
+    const ability = createTypeOrmAbility([
+      { action: 'read', subject: 'Post' },
+      { action: 'read', subject: 'Post', conditions: { deletedAt: null }, inverted: true },
+    ]);
+    expect(accessibleBy(ability).ofType('Post')).toEqual([{ deletedAt: Not(IsNull()) }]);
+  });
+
+  it('normalises inside nested relation objects and relation OR lists', () => {
+    const ability = createTypeOrmAbility([
+      { action: 'read', subject: 'Post', conditions: { author: [{ deletedAt: null }, { role: ['admin', 'editor'] }] } },
+    ]);
+    expect(accessibleBy(ability).ofType('Post')).toEqual([
+      { author: [{ deletedAt: IsNull() }, { role: In(['admin', 'editor']) }] },
+    ]);
   });
 });

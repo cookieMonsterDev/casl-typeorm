@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import type { ConditionTree } from './condition-tree';
 import { CaslTypeOrmError, UnsupportedConditionError } from './errors';
-import { isConditionsList, isFindOperator, isNestedConditions } from './find-operator';
+import { isFindOperator, isRelationLike, normalizeValue } from './find-operator';
 
 /** The query builder whose alias and entity a `where` fragment refers to. */
 interface Scope {
@@ -96,7 +96,7 @@ function compileProperty(context: Context, scope: Scope, key: string, value: unk
   const { metadata } = scope;
   const relation = metadata.findRelationWithPropertyPath(key);
 
-  if (relation && (isNestedConditions(value) || isConditionsList(value))) {
+  if (relation && isRelationLike(value)) {
     return existsCondition(context, scope, relation, value);
   }
   if (relation && isFindOperator(value) && !relation.isOwning) {
@@ -107,7 +107,7 @@ function compileProperty(context: Context, scope: Scope, key: string, value: unk
   }
   if (relation || metadata.findColumnWithPropertyPathStrict(key) || metadata.findEmbeddedWithPropertyPath(key)) {
     // Columns, embedded objects and relation ids are handled by TypeORM's own object-literal where.
-    return new Brackets((where) => where.where({ [key]: value }));
+    return new Brackets((where) => where.where({ [key]: normalizeValue(value) }));
   }
   throw new CaslTypeOrmError(`Property "${key}" was not found in entity "${metadata.name}".`);
 }
