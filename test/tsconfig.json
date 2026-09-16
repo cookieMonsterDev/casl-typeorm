@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    // Test entities use TypeORM decorators, which are not erasable syntax. Column types are always
+    // declared explicitly because esbuild (Vitest) does not emit decorator metadata.
+    "experimentalDecorators": true,
+    "erasableSyntaxOnly": false,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts", "../vite.config.ts"]
+}

@@ -1,0 +1,18 @@
+# MongoDB 8 for `DB=mongodb pnpm test:integration` (TypeORM's mongodb driver, no relations).
+# mongo:8.0 refuses to start on Linux kernels >= 6.19 (SERVER-121912), which recent Docker Desktop
+# releases ship, so the 8.2 line is used.
+name: casl-typeorm-mongodb-8
+
+services:
+  mongodb:
+    image: mongo:8.2
+    ports:
+      - '57017:27017'
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    labels:
+      custom.project: casl-typeorm
+      custom.service: mongodb

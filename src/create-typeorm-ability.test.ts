@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { subject } from '@casl/ability';
 import { In, MoreThan, Not } from 'typeorm';
 import { createTypeOrmAbility } from './create-typeorm-ability';
@@ -12,17 +13,13 @@ describe('createTypeOrmAbility', () => {
 
   describe('instance-level checks (can/cannot)', () => {
     it('checks plain equality conditions', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { published: true } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { published: true } }]);
 
       expect(ability.can('read', { published: true } as never, 'Post')).toBe(false);
     });
 
     it('evaluates plain equality on subject object', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { published: true } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { published: true } }]);
       const post = { published: true, authorId: 1 };
 
       const taggedPost = subject('Post', post);
@@ -33,9 +30,7 @@ describe('createTypeOrmAbility', () => {
     });
 
     it('evaluates MoreThan operator', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { views: MoreThan(100) } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { views: MoreThan(100) } }]);
       expect(ability.can('read', subject('Post', { views: 200 }))).toBe(true);
       expect(ability.can('read', subject('Post', { views: 50 }))).toBe(false);
     });
@@ -50,9 +45,7 @@ describe('createTypeOrmAbility', () => {
     });
 
     it('evaluates Not operator', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { secret: Not(true) } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { secret: Not(true) } }]);
       expect(ability.can('read', subject('Post', { secret: false }))).toBe(true);
       expect(ability.can('read', subject('Post', { secret: true }))).toBe(false);
     });
@@ -72,5 +65,16 @@ describe('createTypeOrmAbility', () => {
       expect(ability.can('read', subject('Post', { secret: false }))).toBe(true);
       expect(ability.can('read', subject('Post', { secret: true }))).toBe(false);
     });
+  });
+});
+
+describe('createTypeOrmAbility options', () => {
+  it('forwards unloadedRelation to the matcher and the rest to CASL', () => {
+    const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { author: { id: 1 } } }], {
+      unloadedRelation: 'deny',
+      anyAction: 'manage',
+    });
+    expect(ability.can('read', subject('Post', {}))).toBe(false);
+    expect(ability.can('read', subject('Post', { author: { id: 1 } }))).toBe(true);
   });
 });

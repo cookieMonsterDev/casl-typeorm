@@ -1,22 +1,30 @@
+import { describe, expect, it } from 'vitest';
 import {
-  In,
-  Or,
-  Not,
   And,
-  Raw,
-  Like,
-  ILike,
-  IsNull,
+  Any,
+  ArrayContainedBy,
+  ArrayContains,
+  ArrayOverlap,
   Between,
+  Equal,
+  ILike,
+  In,
+  IsNull,
+  JsonContains,
   LessThan,
-  MoreThan,
   LessThanOrEqual,
+  Like,
+  MoreThan,
   MoreThanOrEqual,
+  Not,
+  Or,
+  Raw,
 } from 'typeorm';
-import { typeormQueryMatcher } from './typeorm-query-matcher';
+import { CaslTypeOrmError, RelationNotLoadedError } from './errors';
+import { createTypeormQueryMatcher, typeormQueryMatcher } from './typeorm-query-matcher';
 
 function matches(conditions: object, entity: object): boolean {
-  return typeormQueryMatcher(conditions as never)(entity);
+  return typeormQueryMatcher(conditions)(entity);
 }
 
 describe('typeormQueryMatcher', () => {
@@ -27,12 +35,8 @@ describe('typeormQueryMatcher', () => {
     });
 
     it('matches multiple conditions (AND logic)', () => {
-      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 1 })).toBe(
-        true,
-      );
-      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 2 })).toBe(
-        false,
-      );
+      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 1 })).toBe(true);
+      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 2 })).toBe(false);
     });
 
     it('handles missing fields as undefined', () => {
@@ -132,15 +136,9 @@ describe('typeormQueryMatcher', () => {
     });
 
     it('Or requires at least one sub-condition to match', () => {
-      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'active' })).toBe(
-        true,
-      );
-      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'pending' })).toBe(
-        true,
-      );
-      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'deleted' })).toBe(
-        false,
-      );
+      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'active' })).toBe(true);
+      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'pending' })).toBe(true);
+      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'deleted' })).toBe(false);
     });
   });
 
@@ -155,9 +153,7 @@ describe('typeormQueryMatcher', () => {
     });
 
     it('throws when nested relation field is undefined (not loaded)', () => {
-      expect(() => matches({ author: { id: 1 } }, {})).toThrow(
-        'Relation "author" is not loaded. Load the relation before checking ability.can().',
-      );
+      expect(() => matches({ author: { id: 1 } }, {})).toThrow(/Relation "author" is not loaded/);
     });
   });
 
@@ -167,5 +163,118 @@ describe('typeormQueryMatcher', () => {
         'Raw operator is not supported for runtime ability checks',
       );
     });
+  });
+});
+
+describe('typeormQueryMatcher › relations and value types', () => {
+  it('matches a to-many relation when at least one related record matches', () => {
+    const post = { comments: [{ approved: false }, { approved: true }] };
+    expect(matches({ comments: { approved: true } }, post)).toBe(true);
+    expect(matches({ comments: { approved: true } }, { comments: [{ approved: false }] })).toBe(false);
+    expect(matches({ comments: { approved: true } }, { comments: [] })).toBe(false);
+  });
+
+  it('throws when a to-many relation is not loaded', () => {
+    expect(() => matches({ comments: { approved: true } }, {})).toThrow(/Relation "comments" is not loaded/);
+  });
+
+  it('treats an array of nested conditions as OR', () => {
+    const conditions = { author: [{ id: 1 }, { role: 'admin' }] };
+    expect(matches(conditions, { author: { id: 2, role: 'admin' } })).toBe(true);
+    expect(matches(conditions, { author: { id: 1, role: 'user' } })).toBe(true);
+    expect(matches(conditions, { author: { id: 2, role: 'user' } })).toBe(false);
+  });
+
+  it('treats a top-level array of conditions as OR', () => {
+    const conditions = [{ published: true }, { authorId: 1 }];
+    expect(matches(conditions, { published: false, authorId: 1 })).toBe(true);
+    expect(matches(conditions, { published: false, authorId: 2 })).toBe(false);
+  });
+
+  it('treats a scalar array as IN, like TypeORM does', () => {
+    expect(matches({ status: ['a', 'b'] }, { status: 'b' })).toBe(true);
+    expect(matches({ status: ['a', 'b'] }, { status: 'c' })).toBe(false);
+  });
+
+  it('compares dates by value', () => {
+    const day = new Date('2024-01-01T00:00:00Z');
+    expect(matches({ createdAt: new Date(day) }, { createdAt: day })).toBe(true);
+    expect(matches({ createdAt: In([new Date(day)]) }, { createdAt: day })).toBe(true);
+    expect(matches({ createdAt: MoreThan(new Date('2023-12-31')) }, { createdAt: day })).toBe(true);
+    expect(matches({ createdAt: Between(new Date('2023-12-31'), new Date('2024-01-02')) }, { createdAt: day })).toBe(
+      true,
+    );
+    expect(matches({ createdAt: LessThan(new Date('2023-12-31')) }, { createdAt: day })).toBe(false);
+  });
+
+  it('compares values with an equals() method by value', () => {
+    class Id {
+      constructor(readonly value: string) {}
+      equals(other: unknown): boolean {
+        return other instanceof Id && other.value === this.value;
+      }
+    }
+    expect(matches({ id: new Id('a') }, { id: new Id('a') })).toBe(true);
+    expect(matches({ id: new Id('a') }, { id: new Id('b') })).toBe(false);
+  });
+
+  it('never matches ordered comparisons against null, like SQL', () => {
+    expect(matches({ views: MoreThan(1) }, { views: null })).toBe(false);
+    expect(matches({ views: LessThan(1) }, { views: null })).toBe(false);
+    expect(matches({ views: Between(0, 1) }, { views: undefined })).toBe(false);
+    expect(matches({ name: Like('%a%') }, { name: null })).toBe(false);
+  });
+
+  it('supports Equal, Any and JsonContains', () => {
+    expect(matches({ status: Equal('a') }, { status: 'a' })).toBe(true);
+    expect(matches({ status: Any(['a', 'b']) }, { status: 'b' })).toBe(true);
+    expect(matches({ status: Any(['a', 'b']) }, { status: 'c' })).toBe(false);
+    expect(matches({ meta: JsonContains({ tags: ['x'] }) }, { meta: { tags: ['x', 'y'], other: 1 } })).toBe(true);
+    expect(matches({ meta: JsonContains({ tags: ['z'] }) }, { meta: { tags: ['x', 'y'] } })).toBe(false);
+    expect(matches({ meta: JsonContains({ a: { b: 1 } }) }, { meta: { a: { b: 1, c: 2 } } })).toBe(true);
+  });
+
+  it('supports array operators', () => {
+    expect(matches({ tags: ArrayContains(['a']) }, { tags: ['a', 'b'] })).toBe(true);
+    expect(matches({ tags: ArrayContainedBy(['a', 'b', 'c']) }, { tags: ['a', 'b'] })).toBe(true);
+    expect(matches({ tags: ArrayContainedBy(['a']) }, { tags: ['a', 'b'] })).toBe(false);
+    expect(matches({ tags: ArrayOverlap(['c', 'b']) }, { tags: ['a', 'b'] })).toBe(true);
+    expect(matches({ tags: ArrayOverlap(['c']) }, { tags: ['a', 'b'] })).toBe(false);
+  });
+
+  it('skips undefined condition values', () => {
+    expect(matches({ status: undefined, published: true }, { published: true })).toBe(true);
+  });
+});
+
+describe('createTypeormQueryMatcher', () => {
+  function lenientMatches(conditions: object, entity: object): boolean {
+    return createTypeormQueryMatcher({ unloadedRelation: 'deny' })(conditions as never)(entity);
+  }
+
+  it('denies instead of throwing for undefined nested values when configured', () => {
+    expect(lenientMatches({ author: { id: 1 } }, {})).toBe(false);
+    expect(lenientMatches({ author: IsNull() }, {})).toBe(true);
+    expect(lenientMatches({ comments: { approved: true } }, {})).toBe(false);
+  });
+
+  it('throws by default', () => {
+    const strict = createTypeormQueryMatcher()<Record<string, unknown>>({ author: { id: 1 } });
+    expect(() => strict({})).toThrow(/not loaded/);
+  });
+});
+
+describe('typeormQueryMatcher › null conditions', () => {
+  it('treats a null condition as IS NULL, matching null and missing values', () => {
+    expect(matches({ deletedAt: null }, { deletedAt: null })).toBe(true);
+    expect(matches({ deletedAt: null }, {})).toBe(true);
+    expect(matches({ deletedAt: null }, { deletedAt: 'x' })).toBe(false);
+  });
+});
+
+describe('typeormQueryMatcher › errors', () => {
+  it('throws RelationNotLoadedError, a CaslTypeOrmError, for unloaded relations', () => {
+    expect(() => matches({ author: { id: 1 } }, {})).toThrow(RelationNotLoadedError);
+    expect(() => matches({ author: { id: 1 } }, {})).toThrow(CaslTypeOrmError);
   });
 });

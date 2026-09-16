@@ -1,0 +1,80 @@
+# Unit tests and the sqlite integration run never start Docker. The database jobs select a compose
+# file via DB (see test/assets/README.md) and warm a per-database Docker image cache.
+name: CI
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TEST_RETRIES: '2'
+
+jobs:
+  unit:
+    name: Lint, unit and sqlite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-node-pnpm
+      - run: pnpm format:check
+      - name: Lint commit messages
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            pnpm exec commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.sha }}" --verbose
+          else
+            pnpm exec commitlint --last --verbose
+          fi
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - name: Integration tests (sqlite, in-process)
+        run: pnpm test:integration
+        env:
+          DB: sqlite
+
+  integration:
+    name: Integration (${{ matrix.db }})
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgres, mysql, mssql, mongodb]
+    env:
+      DB: ${{ matrix.db }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-node-pnpm
+      - name: Restore Docker images
+        id: docker-cache
+        uses: actions/cache@v6
+        with:
+          path: /tmp/db-docker-images.tar
+          key: db-docker-${{ matrix.db }}-${{ hashFiles('test/assets/**/*.yml') }}
+          restore-keys: |
+            db-docker-${{ matrix.db }}-
+      - name: Load cached Docker images
+        if: steps.docker-cache.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/db-docker-images.tar
+      - name: Pull Docker images
+        run: bash scripts/compose-pull.sh
+      - name: Save Docker images
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: |
+          images=$(docker compose -f "$(bash scripts/resolve-compose-file.sh)" config --images)
+          docker save ${images} -o /tmp/db-docker-images.tar
+      - run: pnpm test:integration

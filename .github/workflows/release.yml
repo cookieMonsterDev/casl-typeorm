@@ -22,25 +22,20 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: 'pnpm'
+      - uses: ./.github/actions/setup-node-pnpm
 
       - uses: ./.github/actions/require-npm-oidc
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
 
       - name: Test
         run: pnpm test
+
+      - name: Integration tests (sqlite, in-process)
+        run: pnpm test:integration
+        env:
+          DB: sqlite
 
       - name: Exchange GitHub OIDC token for an npm publish token
         run: node scripts/exchange-npm-oidc-token.mjs @cookiemonsterdev/casl-typeorm

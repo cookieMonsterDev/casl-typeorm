@@ -1,0 +1,21 @@
+# PostgreSQL 17 for `DB=postgres DB_VERSION=17 pnpm test:integration`. Started by test/helpers/global-setup.ts
+# with `docker compose up --wait`; the healthcheck is what `--wait` blocks on.
+name: casl-typeorm-postgres-17
+
+services:
+  postgres:
+    image: postgres:17
+    ports:
+      - '55432:5432'
+    environment:
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl
+      POSTGRES_DB: casl
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U casl -d casl']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    labels:
+      custom.project: casl-typeorm
+      custom.service: postgres

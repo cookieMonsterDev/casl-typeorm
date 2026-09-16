@@ -37,8 +37,7 @@ if (!idTokenResponse.ok || typeof idTokenBody.value !== 'string') {
 }
 
 const exchangeUrl =
-  `https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/` +
-  encodeURIComponent(packageName);
+  `https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/` + encodeURIComponent(packageName);
 const exchangeResponse = await fetch(exchangeUrl, {
   method: 'POST',
   headers: {

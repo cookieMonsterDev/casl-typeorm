@@ -1,45 +1,71 @@
-import { Not } from 'typeorm';
-import { type FindOptionsWhere } from 'typeorm';
-import { rulesToCondition } from '@casl/ability/extra';
-import { type AnyAbility, type SubjectType } from '@casl/ability';
+import type { AnyAbility, SubjectType } from '@casl/ability';
+import type { EntityMetadata, FindOptionsWhere, ObjectLiteral, SelectQueryBuilder } from 'typeorm';
+import { type ConditionTree, rulesToConditionTree } from './condition-tree';
+import { conditionTreeToFindOptions } from './find-options';
+import { conditionTreeToMongoQuery } from './mongo-query';
+import { applyConditionTree, entityMetadataOf } from './query-builder';
 
-type WhereGroup = FindOptionsWhere<unknown>[];
-
-function negateConditionFields(conditions: Record<string, unknown>): FindOptionsWhere<unknown> {
-  return Object.fromEntries(
-    Object.entries(conditions).map(([key, value]) => [key, Not(value as never)]),
-  );
+export interface ApplyToOptions {
+  /**
+   * Subject type the rules were defined for. By default the entity class is used when the ability
+   * has rules for it, otherwise the entity name (`metadata.name`).
+   */
+  subjectType?: SubjectType;
 }
-
-function convertRule(rule: AnyAbility['rules'][number]): WhereGroup {
-  if (rule.inverted) {
-    if (!rule.conditions) return [];
-    return [negateConditionFields(rule.conditions as Record<string, unknown>)];
-  }
-  return [(rule.conditions as FindOptionsWhere<unknown>) ?? {}];
-}
-
-const TYPEORM_AGGREGATION = {
-  and: (groups: WhereGroup[]): WhereGroup =>
-    groups.reduce((acc, curr) => acc.flatMap((a) => curr.map((c) => ({ ...a, ...c }))), [
-      {},
-    ] as WhereGroup),
-  or: (groups: WhereGroup[]): WhereGroup => groups.flat(),
-  empty: (): WhereGroup => [{}],
-};
 
 export class AccessibleRecords {
-  constructor(
-    private readonly _ability: AnyAbility,
-    private readonly _action: string,
-  ) {}
+  readonly ability: AnyAbility;
+  readonly action: string;
 
-  ofType<T extends object>(
-    subjectType: SubjectType | (new (...args: never[]) => T),
-  ): FindOptionsWhere<T>[] | null {
-    const rules = this._ability.rulesFor(this._action, subjectType as SubjectType);
-    return rulesToCondition(rules, convertRule, TYPEORM_AGGREGATION) as
-      FindOptionsWhere<T>[] | null;
+  constructor(ability: AnyAbility, action: string) {
+    this.ability = ability;
+    this.action = action;
+  }
+
+  /** Condition tree for `subjectType`, or `null` when the ability grants no access. */
+  conditionTreeFor(subjectType: SubjectType): ConditionTree | null {
+    return rulesToConditionTree(this.ability.rulesFor(this.action, subjectType));
+  }
+
+  /**
+   * `FindOptionsWhere[]` for `find()`, `findOne()`, `count()` and friends, or `null` when the
+   * ability grants no access at all. Throws `UnsupportedConditionError` when a `cannot` rule
+   * targets a relation, which `FindOptionsWhere` cannot negate; use `applyTo()` for that.
+   */
+  ofType<T extends ObjectLiteral>(subjectType: SubjectType): FindOptionsWhere<T>[] | null {
+    const tree = this.conditionTreeFor(subjectType);
+    return tree ? (conditionTreeToFindOptions(tree) as FindOptionsWhere<T>[]) : null;
+  }
+
+  /**
+   * Restricts a `SelectQueryBuilder` to accessible records and returns it. Relation conditions
+   * compile to correlated `EXISTS` subqueries, so `cannot` rules on relations and to-many relations
+   * are exact. When the ability grants no access the query returns no rows.
+   */
+  applyTo<T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, options: ApplyToOptions = {}): SelectQueryBuilder<T> {
+    const subjectType = options.subjectType ?? this.subjectTypeFor(entityMetadataOf(qb));
+    return applyConditionTree(qb, this.conditionTreeFor(subjectType));
+  }
+
+  /**
+   * MongoDB filter for TypeORM's mongodb driver (`repository.find({ where })`), or `null` when the
+   * ability grants no access. Pass the entity metadata so the `@ObjectIdColumn()` property is
+   * renamed to `_id` inside `$nor`/`$or`, which TypeORM does not rewrite itself.
+   */
+  toMongoQuery(subjectType: SubjectType, metadata?: EntityMetadata): ObjectLiteral | null {
+    const tree = this.conditionTreeFor(subjectType);
+    if (!tree) return null;
+    const objectIdProperty = metadata?.objectIdColumn?.propertyName;
+    return conditionTreeToMongoQuery(tree, objectIdProperty && objectIdProperty !== '_id' ? { objectIdProperty } : {});
+  }
+
+  /** Picks the subject type the ability actually has rules for: the entity class or its name. */
+  subjectTypeFor(metadata: EntityMetadata): SubjectType {
+    const candidates: SubjectType[] =
+      typeof metadata.target === 'function' ? [metadata.target as SubjectType, metadata.name] : [metadata.name];
+    return (
+      candidates.find((candidate) => this.ability.possibleRulesFor(this.action, candidate).length > 0) ?? candidates[0]!
+    );
   }
 }
 
