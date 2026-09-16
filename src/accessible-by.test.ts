@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { In, MoreThan, Not } from 'typeorm';
 import { accessibleBy } from './accessible-by';
 import { createTypeOrmAbility } from './create-typeorm-ability';
@@ -17,9 +18,7 @@ describe('accessibleBy', () => {
     });
 
     it('returns conditions from a single can rule', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { published: true } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { published: true } }]);
       const result = accessibleBy(ability, 'read').ofType('Post');
       expect(result).toEqual([{ published: true }]);
     });
@@ -35,9 +34,7 @@ describe('accessibleBy', () => {
     });
 
     it('uses read as the default action', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { published: true } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { published: true } }]);
       const result = accessibleBy(ability).ofType('Post');
       expect(result).toEqual([{ published: true }]);
     });
@@ -99,9 +96,7 @@ describe('accessibleBy', () => {
     });
 
     it('supports MoreThan operator in conditions', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { views: MoreThan(100) } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { views: MoreThan(100) } }]);
       const result = accessibleBy(ability, 'read').ofType('Post');
       expect(result).toEqual([{ views: MoreThan(100) }]);
     });
@@ -123,17 +118,13 @@ describe('accessibleBy', () => {
 
   describe('subject type detection', () => {
     it('returns null for an action not defined in rules', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { published: true } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { published: true } }]);
       const result = accessibleBy(ability, 'update').ofType('Post');
       expect(result).toBeNull();
     });
 
     it('returns null for a subject not defined in rules', () => {
-      const ability = createTypeOrmAbility([
-        { action: 'read', subject: 'Post', conditions: { published: true } },
-      ]);
+      const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { published: true } }]);
       const result = accessibleBy(ability, 'read').ofType('Comment');
       expect(result).toBeNull();
     });

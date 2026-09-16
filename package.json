@@ -1,37 +1,17 @@
 {
   "name": "@cookiemonsterdev/casl-typeorm",
   "version": "1.0.5",
+  "description": "TypeORM integration for CASL — filter find() queries, query builders and MongoDB filters by ability rules, including permissions on related records",
+  "type": "module",
   "license": "MIT",
-  "description": "TypeORM integration for CASL — filter queries and check permissions using ability rules",
   "author": "Mykhailo Toporkov",
   "homepage": "https://github.com/cookieMonsterDev/casl-typeorm",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js"
-    }
+  "bugs": {
+    "url": "https://github.com/cookieMonsterDev/casl-typeorm/issues"
   },
-  "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "test": "jest --passWithNoTests",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cookieMonsterDev/casl-typeorm.git"
   },
   "keywords": [
     "casl",
@@ -40,43 +20,88 @@
     "permissions",
     "acl",
     "abac",
-    "rbac"
+    "rbac",
+    "query-builder",
+    "mongodb"
   ],
-  "peerDependencies": {
-    "@casl/ability": "^7.0.0",
-    "typeorm": "^1.0.0"
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.11.0"
   },
-  "devDependencies": {
-    "@casl/ability": "^7.0.0",
-    "@commitlint/cli": "^21.0.2",
-    "@commitlint/config-conventional": "^21.0.2",
-    "@eslint/js": "^10.0.1",
-    "@semantic-release/changelog": "^7.0.0",
-    "@semantic-release/exec": "^7.1.0",
-    "@semantic-release/git": "^11.0.1",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^25.0.0",
-    "eslint": "^10.5.0",
-    "eslint-config-prettier": "^10.1.8",
-    "husky": "^9.1.7",
-    "jest": "^30.0.0",
-    "lint-staged": "^17.0.0",
-    "prettier": "^3.8.4",
-    "semantic-release": "^25.0.0",
-    "ts-jest": "^29.4.11",
-    "typeorm": "^1.0.0",
-    "typescript": "^6.0.0",
-    "typescript-eslint": "^8.61.1"
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
-  "publishConfig": {
-    "access": "public",
-    "provenance": true,
-    "registry": "https://registry.npmjs.org/"
+  "scripts": {
+    "build": "pnpm run build:js && pnpm run build:types",
+    "build:js": "vite build",
+    "build:types": "tsc -p tsconfig.json --emitDeclarationOnly",
+    "dev": "vite build --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
+    "coverage": "vitest run --project unit --coverage",
+    "test:db:up": "bash scripts/compose-up.sh",
+    "test:db:down": "bash scripts/compose-down.sh",
+    "test:db:pull": "bash scripts/compose-pull.sh",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "clean": "rm -rf dist coverage",
+    "prepare": "husky"
+  },
+  "peerDependencies": {
+    "@casl/ability": "^7.0.0",
+    "typeorm": "^1.0.0"
+  },
+  "devDependencies": {
+    "@casl/ability": "^7.0.1",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@eslint/js": "^10.0.1",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
+    "@types/node": "^25.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/eslint-plugin": "^1.6.27",
+    "better-sqlite3": "^12.11.1",
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.0",
+    "mongodb": "^7.0.0",
+    "mssql": "^12.0.0",
+    "mysql2": "^3.15.3",
+    "pg": "^8.5.1",
+    "prettier": "^3.8.4",
+    "reflect-metadata": "^0.2.2",
+    "semantic-release": "^25.0.0",
+    "typeorm": "^1.1.1",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.61.1",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   },
   "packageManager": "pnpm@10.30.3"
 }

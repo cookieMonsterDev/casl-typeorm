@@ -6,9 +6,7 @@ import { type AnyAbility, type SubjectType } from '@casl/ability';
 type WhereGroup = FindOptionsWhere<unknown>[];
 
 function negateConditionFields(conditions: Record<string, unknown>): FindOptionsWhere<unknown> {
-  return Object.fromEntries(
-    Object.entries(conditions).map(([key, value]) => [key, Not(value as never)]),
-  );
+  return Object.fromEntries(Object.entries(conditions).map(([key, value]) => [key, Not(value as never)]));
 }
 
 function convertRule(rule: AnyAbility['rules'][number]): WhereGroup {
@@ -21,25 +19,23 @@ function convertRule(rule: AnyAbility['rules'][number]): WhereGroup {
 
 const TYPEORM_AGGREGATION = {
   and: (groups: WhereGroup[]): WhereGroup =>
-    groups.reduce((acc, curr) => acc.flatMap((a) => curr.map((c) => ({ ...a, ...c }))), [
-      {},
-    ] as WhereGroup),
+    groups.reduce((acc, curr) => acc.flatMap((a) => curr.map((c) => ({ ...a, ...c }))), [{}] as WhereGroup),
   or: (groups: WhereGroup[]): WhereGroup => groups.flat(),
   empty: (): WhereGroup => [{}],
 };
 
 export class AccessibleRecords {
-  constructor(
-    private readonly _ability: AnyAbility,
-    private readonly _action: string,
-  ) {}
+  private readonly _ability: AnyAbility;
+  private readonly _action: string;
 
-  ofType<T extends object>(
-    subjectType: SubjectType | (new (...args: never[]) => T),
-  ): FindOptionsWhere<T>[] | null {
-    const rules = this._ability.rulesFor(this._action, subjectType as SubjectType);
-    return rulesToCondition(rules, convertRule, TYPEORM_AGGREGATION) as
-      FindOptionsWhere<T>[] | null;
+  constructor(ability: AnyAbility, action: string) {
+    this._ability = ability;
+    this._action = action;
+  }
+
+  ofType<T extends object>(subjectType: SubjectType | (new (...args: never[]) => T)): FindOptionsWhere<T>[] | null {
+    const rules = this._ability.rulesFor(this._action, subjectType);
+    return rulesToCondition(rules, convertRule, TYPEORM_AGGREGATION);
   }
 }
 

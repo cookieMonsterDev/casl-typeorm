@@ -27,7 +27,7 @@ function sqlLikeToRegex(pattern: string, caseInsensitive: boolean): RegExp {
 function evaluateFindOperator(fieldValue: unknown, op: Record<string, unknown>): boolean {
   const type = op['type'] as string;
   const child = op['child'] as Record<string, unknown> | undefined;
-  const value = op['value'] as unknown;
+  const value = op['value'];
 
   switch (type) {
     case 'equal':
@@ -56,20 +56,14 @@ function evaluateFindOperator(fieldValue: unknown, op: Record<string, unknown>):
       return fieldValue === null || fieldValue === undefined;
 
     case 'like':
-      return (
-        typeof fieldValue === 'string' && sqlLikeToRegex(value as string, false).test(fieldValue)
-      );
+      return typeof fieldValue === 'string' && sqlLikeToRegex(value as string, false).test(fieldValue);
 
     case 'ilike':
-      return (
-        typeof fieldValue === 'string' && sqlLikeToRegex(value as string, true).test(fieldValue)
-      );
+      return typeof fieldValue === 'string' && sqlLikeToRegex(value as string, true).test(fieldValue);
 
     case 'between': {
       const [lower, upper] = value as [unknown, unknown];
-      return (
-        (fieldValue as number) >= (lower as number) && (fieldValue as number) <= (upper as number)
-      );
+      return (fieldValue as number) >= (lower as number) && (fieldValue as number) <= (upper as number);
     }
 
     case 'and': {
@@ -83,22 +77,13 @@ function evaluateFindOperator(fieldValue: unknown, op: Record<string, unknown>):
     }
 
     case 'arrayContains':
-      return (
-        Array.isArray(fieldValue) &&
-        (value as unknown[]).every((v) => (fieldValue as unknown[]).includes(v))
-      );
+      return Array.isArray(fieldValue) && (value as unknown[]).every((v) => (fieldValue as unknown[]).includes(v));
 
     case 'arrayContainedBy':
-      return (
-        Array.isArray(fieldValue) &&
-        (fieldValue as unknown[]).every((v) => (value as unknown[]).includes(v))
-      );
+      return Array.isArray(fieldValue) && (fieldValue as unknown[]).every((v) => (value as unknown[]).includes(v));
 
     case 'arrayOverlap':
-      return (
-        Array.isArray(fieldValue) &&
-        (value as unknown[]).some((v) => (fieldValue as unknown[]).includes(v))
-      );
+      return Array.isArray(fieldValue) && (value as unknown[]).some((v) => (fieldValue as unknown[]).includes(v));
 
     case 'raw':
       throw new Error(
@@ -111,10 +96,7 @@ function evaluateFindOperator(fieldValue: unknown, op: Record<string, unknown>):
   }
 }
 
-function evaluateConditions(
-  object: Record<string, unknown>,
-  conditions: FindOptionsWhere<unknown>,
-): boolean {
+function evaluateConditions(object: Record<string, unknown>, conditions: FindOptionsWhere<unknown>): boolean {
   for (const [key, condition] of Object.entries(conditions)) {
     const fieldValue = object[key];
 
@@ -126,19 +108,12 @@ function evaluateConditions(
     }
     if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
       if (fieldValue === undefined) {
-        throw new Error(
-          `Relation "${key}" is not loaded. Load the relation before checking ability.can().`,
-        );
+        throw new Error(`Relation "${key}" is not loaded. Load the relation before checking ability.can().`);
       }
       if (fieldValue === null) {
         return false;
       }
-      if (
-        !evaluateConditions(
-          fieldValue as Record<string, unknown>,
-          condition as FindOptionsWhere<unknown>,
-        )
-      ) {
+      if (!evaluateConditions(fieldValue as Record<string, unknown>, condition)) {
         return false;
       }
       continue;
@@ -148,8 +123,6 @@ function evaluateConditions(
   return true;
 }
 
-export function typeormQueryMatcher(
-  conditions: FindOptionsWhere<unknown>,
-): (object: unknown) => boolean {
+export function typeormQueryMatcher(conditions: FindOptionsWhere<unknown>): (object: unknown) => boolean {
   return (object: unknown) => evaluateConditions(object as Record<string, unknown>, conditions);
 }

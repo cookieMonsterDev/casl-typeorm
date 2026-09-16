@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import {
   In,
   Or,
@@ -16,7 +17,7 @@ import {
 import { typeormQueryMatcher } from './typeorm-query-matcher';
 
 function matches(conditions: object, entity: object): boolean {
-  return typeormQueryMatcher(conditions as never)(entity);
+  return typeormQueryMatcher(conditions)(entity);
 }
 
 describe('typeormQueryMatcher', () => {
@@ -27,12 +28,8 @@ describe('typeormQueryMatcher', () => {
     });
 
     it('matches multiple conditions (AND logic)', () => {
-      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 1 })).toBe(
-        true,
-      );
-      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 2 })).toBe(
-        false,
-      );
+      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 1 })).toBe(true);
+      expect(matches({ published: true, authorId: 1 }, { published: true, authorId: 2 })).toBe(false);
     });
 
     it('handles missing fields as undefined', () => {
@@ -132,15 +129,9 @@ describe('typeormQueryMatcher', () => {
     });
 
     it('Or requires at least one sub-condition to match', () => {
-      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'active' })).toBe(
-        true,
-      );
-      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'pending' })).toBe(
-        true,
-      );
-      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'deleted' })).toBe(
-        false,
-      );
+      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'active' })).toBe(true);
+      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'pending' })).toBe(true);
+      expect(matches({ status: Or(In(['active']), In(['pending'])) }, { status: 'deleted' })).toBe(false);
     });
   });
 

@@ -9,10 +9,7 @@ import {
 import { type FindOptionsWhere } from 'typeorm';
 import { typeormQueryMatcher } from './typeorm-query-matcher';
 
-export type TypeOrmAbility<A extends AbilityTuple = AbilityTuple> = MongoAbility<
-  A,
-  FindOptionsWhere<object>
->;
+export type TypeOrmAbility<A extends AbilityTuple = AbilityTuple> = MongoAbility<A, FindOptionsWhere<object>>;
 
 export function createTypeOrmAbility<A extends AbilityTuple = AbilityTuple>(
   rules: RawRuleFrom<A, FindOptionsWhere<object>>[] = [],
@@ -20,7 +17,7 @@ export function createTypeOrmAbility<A extends AbilityTuple = AbilityTuple>(
 ): TypeOrmAbility<A> {
   return new Ability<A, FindOptionsWhere<object>>(rules, {
     ...options,
-    conditionsMatcher: typeormQueryMatcher as never,
+    conditionsMatcher: typeormQueryMatcher,
     fieldMatcher: fieldPatternMatcher,
   });
 }
