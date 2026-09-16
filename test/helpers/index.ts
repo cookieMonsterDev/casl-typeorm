@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { describe, it } from 'vitest';
 import { MONGO_ENTITIES } from '../fixtures/mongo-entities';
+import { POSTGRES_ENTITIES } from '../fixtures/postgres-entities';
 import { SQL_ENTITIES } from '../fixtures/sql-entities';
 import { type DbName, dataSourceOptions, getDb, isMongo, isSql } from './db';
 
@@ -14,10 +15,15 @@ export function testIfDb(...dbs: DbName[]): ReturnType<typeof it.skipIf> {
   return it.skipIf(!dbs.includes(getDb()));
 }
 
+/** Runs the suite only on the listed databases. */
+export function describeIfDb(...dbs: DbName[]): ReturnType<typeof describe.skipIf> {
+  return describe.skipIf(!dbs.includes(getDb()));
+}
+
 export async function createSqlDataSource(): Promise<DataSource> {
   const dataSource = new DataSource({
     ...dataSourceOptions(),
-    entities: SQL_ENTITIES,
+    entities: getDb() === 'postgres' ? [...SQL_ENTITIES, ...POSTGRES_ENTITIES] : SQL_ENTITIES,
     synchronize: true,
     dropSchema: true,
   });

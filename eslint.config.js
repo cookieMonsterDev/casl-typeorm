@@ -59,6 +59,7 @@ export default tseslint.config(
     rules: {
       'vitest/expect-expect': 'off',
       'vitest/valid-title': 'off',
+      'vitest/valid-describe-callback': 'off',
     },
   },
   prettierConfig,
