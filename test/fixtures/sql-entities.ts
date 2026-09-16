@@ -105,7 +105,7 @@ export class Article {
   @Column({ type: 'varchar', length: 64, nullable: true })
   deletedReason!: string | null;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: Date })
   createdAt!: Date;
 
   @Column(() => ArticleMeta)
