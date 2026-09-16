@@ -20,7 +20,7 @@ import {
   Or,
   Raw,
 } from 'typeorm';
-import { typeormQueryMatcher } from './typeorm-query-matcher';
+import { createTypeormQueryMatcher, typeormQueryMatcher } from './typeorm-query-matcher';
 
 function matches(conditions: object, entity: object): boolean {
   return typeormQueryMatcher(conditions)(entity);
@@ -245,5 +245,22 @@ describe('typeormQueryMatcher › relations and value types', () => {
 
   it('skips undefined condition values', () => {
     expect(matches({ status: undefined, published: true }, { published: true })).toBe(true);
+  });
+});
+
+describe('createTypeormQueryMatcher', () => {
+  function lenientMatches(conditions: object, entity: object): boolean {
+    return createTypeormQueryMatcher({ unloadedRelation: 'deny' })(conditions as never)(entity);
+  }
+
+  it('denies instead of throwing for undefined nested values when configured', () => {
+    expect(lenientMatches({ author: { id: 1 } }, {})).toBe(false);
+    expect(lenientMatches({ author: IsNull() }, {})).toBe(true);
+    expect(lenientMatches({ comments: { approved: true } }, {})).toBe(false);
+  });
+
+  it('throws by default', () => {
+    const strict = createTypeormQueryMatcher()<Record<string, unknown>>({ author: { id: 1 } });
+    expect(() => strict({})).toThrow(/not loaded/);
   });
 });

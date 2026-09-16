@@ -6,7 +6,7 @@ import {
   type RawRuleFrom,
 } from '@casl/ability';
 import type { FindOptionsWhere, ObjectLiteral } from 'typeorm';
-import { typeormQueryMatcher } from './typeorm-query-matcher';
+import { createTypeormQueryMatcher, type TypeOrmMatcherOptions } from './typeorm-query-matcher';
 
 /** Rule conditions accepted by a `TypeOrmAbility`: TypeORM's `FindOptionsWhere` (or an OR array of them). */
 export type TypeOrmQuery<T extends ObjectLiteral = ObjectLiteral> = FindOptionsWhere<T> | FindOptionsWhere<T>[];
@@ -18,7 +18,8 @@ export type TypeOrmRawRule<A extends AbilityTuple = AbilityTuple> = RawRuleFrom<
 export type TypeOrmAbilityOptions<A extends AbilityTuple = AbilityTuple> = Omit<
   AbilityOptionsOf<TypeOrmAbility<A>>,
   'conditionsMatcher' | 'fieldMatcher'
->;
+> &
+  TypeOrmMatcherOptions;
 
 /**
  * Creates a CASL ability whose rule conditions are TypeORM `FindOptionsWhere` objects, so the same
@@ -28,9 +29,10 @@ export function createTypeOrmAbility<A extends AbilityTuple = AbilityTuple>(
   rules: TypeOrmRawRule<A>[] = [],
   options: TypeOrmAbilityOptions<A> = {},
 ): TypeOrmAbility<A> {
+  const { unloadedRelation, ...abilityOptions } = options;
   return new Ability<A, TypeOrmQuery>(rules, {
-    ...options,
-    conditionsMatcher: typeormQueryMatcher,
+    ...abilityOptions,
+    conditionsMatcher: createTypeormQueryMatcher({ unloadedRelation }),
     fieldMatcher: fieldPatternMatcher,
   });
 }

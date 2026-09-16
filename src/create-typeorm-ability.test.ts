@@ -67,3 +67,14 @@ describe('createTypeOrmAbility', () => {
     });
   });
 });
+
+describe('createTypeOrmAbility options', () => {
+  it('forwards unloadedRelation to the matcher and the rest to CASL', () => {
+    const ability = createTypeOrmAbility([{ action: 'read', subject: 'Post', conditions: { author: { id: 1 } } }], {
+      unloadedRelation: 'deny',
+      anyAction: 'manage',
+    });
+    expect(ability.can('read', subject('Post', {}))).toBe(false);
+    expect(ability.can('read', subject('Post', { author: { id: 1 } }))).toBe(true);
+  });
+});

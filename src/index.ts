@@ -4,4 +4,7 @@ export type { ConditionTree } from './condition-tree';
 export { createTypeOrmAbility } from './create-typeorm-ability';
 export type { TypeOrmAbility, TypeOrmAbilityOptions, TypeOrmQuery, TypeOrmRawRule } from './create-typeorm-ability';
 export { CaslTypeOrmError, UnsupportedConditionError } from './errors';
-export { typeormQueryMatcher } from './typeorm-query-matcher';
+export { accessibleRecords } from './repository';
+export type { AccessibleRecordsExtension, FindAccessibleOptions } from './repository';
+export { createTypeormQueryMatcher, typeormQueryMatcher } from './typeorm-query-matcher';
+export type { TypeOrmMatcherOptions, TypeOrmQueryMatcher } from './typeorm-query-matcher';

@@ -84,29 +84,50 @@ function evaluateFindOperator(fieldValue: unknown, operator: FindOperator<unknow
   }
 }
 
-function evaluateRelation(key: string, fieldValue: unknown, conditions: ObjectLiteral | ObjectLiteral[]): boolean {
-  if (fieldValue === undefined) {
-    throw new Error(`Relation "${key}" is not loaded. Load the relation before checking ability.can().`);
-  }
-  if (fieldValue === null) return false;
-  // A to-many relation matches when at least one related record matches (EXISTS semantics).
-  if (Array.isArray(fieldValue)) {
-    return fieldValue.some((item: unknown) => evaluateWhere(item as ObjectLiteral, conditions));
-  }
-  return evaluateWhere(fieldValue, conditions);
+export interface TypeOrmMatcherOptions {
+  /**
+   * What `ability.can()` does when a condition targets a nested property that is `undefined` on the
+   * entity. `'throw'` (default) treats it as a relation that was not loaded and throws, which
+   * catches a missing `relations: { ... }` early. `'deny'` treats it like `null` (no match), which
+   * suits optional embedded documents, e.g. with TypeORM's mongodb driver.
+   */
+  unloadedRelation?: 'throw' | 'deny';
 }
 
-function evaluateWhere(object: ObjectLiteral, conditions: ObjectLiteral | ObjectLiteral[]): boolean {
-  if (Array.isArray(conditions)) return conditions.some((branch: ObjectLiteral) => evaluateWhere(object, branch));
+function evaluateRelation(
+  key: string,
+  fieldValue: unknown,
+  conditions: ObjectLiteral | ObjectLiteral[],
+  options: TypeOrmMatcherOptions,
+): boolean {
+  if (fieldValue === undefined && options.unloadedRelation !== 'deny') {
+    throw new Error(`Relation "${key}" is not loaded. Load the relation before checking ability.can().`);
+  }
+  if (fieldValue === null || fieldValue === undefined) return false;
+  // A to-many relation matches when at least one related record matches (EXISTS semantics).
+  if (Array.isArray(fieldValue)) {
+    return fieldValue.some((item: unknown) => evaluateWhere(item as ObjectLiteral, conditions, options));
+  }
+  return evaluateWhere(fieldValue, conditions, options);
+}
 
-  for (const [key, condition] of Object.entries(conditions)) {
+function evaluateWhere(
+  object: ObjectLiteral,
+  conditions: ObjectLiteral | ObjectLiteral[],
+  options: TypeOrmMatcherOptions,
+): boolean {
+  if (Array.isArray(conditions)) {
+    return conditions.some((branch: ObjectLiteral) => evaluateWhere(object, branch, options));
+  }
+
+  for (const [key, condition] of Object.entries<unknown>(conditions)) {
     if (condition === undefined) continue;
     const fieldValue: unknown = object[key];
 
     if (isFindOperator(condition)) {
       if (!evaluateFindOperator(fieldValue, condition)) return false;
     } else if (isNestedConditions(condition) || isConditionsList(condition)) {
-      if (!evaluateRelation(key, fieldValue, condition)) return false;
+      if (!evaluateRelation(key, fieldValue, condition, options)) return false;
     } else if (Array.isArray(condition)) {
       if (!includes(condition, fieldValue)) return false;
     } else if (!valuesEqual(fieldValue, condition)) {
@@ -116,12 +137,17 @@ function evaluateWhere(object: ObjectLiteral, conditions: ObjectLiteral | Object
   return true;
 }
 
+export type TypeOrmQueryMatcher = <T extends ObjectLiteral>(
+  conditions: FindOptionsWhere<T> | FindOptionsWhere<T>[],
+) => (object: T) => boolean;
+
+/** Builds a CASL conditions matcher for TypeORM `FindOptionsWhere` conditions. */
+export function createTypeormQueryMatcher(options: TypeOrmMatcherOptions = {}): TypeOrmQueryMatcher {
+  return (conditions) => (object) => evaluateWhere(object, conditions, options);
+}
+
 /**
  * CASL conditions matcher for TypeORM `FindOptionsWhere` conditions, used by `ability.can()` on
  * entity instances. Relations referenced by a condition must be loaded on the entity.
  */
-export function typeormQueryMatcher<T extends ObjectLiteral>(
-  conditions: FindOptionsWhere<T> | FindOptionsWhere<T>[],
-): (object: T) => boolean {
-  return (object: T) => evaluateWhere(object, conditions);
-}
+export const typeormQueryMatcher: TypeOrmQueryMatcher = createTypeormQueryMatcher();
